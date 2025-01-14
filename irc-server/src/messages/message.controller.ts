@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { MessageService } from './message.service';
 
 @Controller('messages')
@@ -17,5 +17,13 @@ export class MessageController {
   @Get(':channel')
   async findAll(@Param('channel') channel: string) {
     return this.messageService.getMessagesByChannel(channel);
+  }
+
+  @Get('private')
+  async getPrivateMessages(
+      @Query('sender') sender: string,
+      @Query('recipient') recipient: string,
+  ) {
+    return this.messageService.getPrivateMessages(sender, recipient);
   }
 }

@@ -31,4 +31,15 @@ export class MessageService {
   async getMessagesByChannel(channel: string): Promise<Message[]> {
     return this.messageModel.find({ channel }).sort({ timestamp: 1 }).exec();
   }
+
+  // Get private messages between two users
+  async getPrivateMessages(sender: string, recipient: string): Promise<Message[]> {
+    return this.messageModel.find({
+      $or: [
+        { sender, recipient },
+        { sender: recipient, recipient: sender },
+      ],
+    }).sort({ timestamp: 1 }).exec();
+    }
+
 }

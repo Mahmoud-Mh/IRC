@@ -1,16 +1,16 @@
 import { Module } from '@nestjs/common';
-import { ChannelService } from './channel.service'; // Correct import
-import { ChannelController } from './channel.controller'; // Correct import
+import { ChannelService } from './channel.service'; 
+import { ChannelController } from './channel.controller'; 
 import { MongooseModule } from '@nestjs/mongoose';
 import { Channel, ChannelSchema } from './channel.schema';
-import { UsersModule } from '../users/user.module'; // Import UsersModule
+import { UsersModule } from '../users/user.module'; 
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Channel.name, schema: ChannelSchema }]),
-    UsersModule, // Add UsersModule here
+    UsersModule, 
   ],
-  controllers: [ChannelController], // Correct Controller
-  providers: [ChannelService], // Correct Service
+  controllers: [ChannelController], 
+  providers: [ChannelService], 
 })
 export class ChannelsModule {}
