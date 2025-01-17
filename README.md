@@ -56,7 +56,7 @@ Before getting started, ensure that you have the following installed:
 
 1. **Clone the repository**:
    ```bash
-   git clone <repository_url>
+   git clone https://github.com/Mahmoud-Mh/IRC.git
    cd <repository_directory>
 
    
