@@ -122,38 +122,44 @@ import {
     }
 
     // Send a private message to another user
-    @SubscribeMessage('sendPrivateMessage')
-    async sendPrivateMessage(client: Socket, payload: { recipient: string; content: string }) {
-      const sender = this.users[client.id];
-      console.log(`[sendPrivateMessage] Sender: ${sender}`);
-      if (!sender) {
-        console.log(`[sendPrivateMessage] Error: Sender has no nickname.`);
-        return client.emit('error', { message: 'Please set a nickname first' });
-      }
-    
-      console.log(`[sendPrivateMessage] Received payload: ${JSON.stringify(payload)}`);
-    
-      const recipientSocketId = Object.keys(this.users).find(
-        (key) => this.users[key] === payload.recipient,
-      );
-    
-      console.log(`[sendPrivateMessage] Recipient socket ID: ${recipientSocketId}`);
-    
-      if (!recipientSocketId) {
-        console.log(`[sendPrivateMessage] Recipient ${payload.recipient} not found.`);
-        return client.emit('error', { message: 'Recipient not found or not online' });
-      }
-    
-      console.log(`[sendPrivateMessage] Saving private message: ${sender} -> ${payload.recipient}`);
-      await this.messageService.createPrivateMessage(sender, payload.recipient, payload.content);
-    
-      this.server.to(recipientSocketId).emit('newPrivateMessage', {
-        sender,
-        content: payload.content,
-        timestamp: new Date(),
-      });
-      console.log(`[sendPrivateMessage] Delivered message to ${payload.recipient}`);
-    
-      client.emit('privateMessageSent', { success: true });
+  @SubscribeMessage('sendPrivateMessage')
+  async sendPrivateMessage(client: Socket, payload: { recipient: string; content: string }) {
+    const sender = this.users[client.id];
+    console.log(`[sendPrivateMessage] Sender: ${sender}`);
+    if (!sender) {
+      console.log(`[sendPrivateMessage] Error: Sender has no nickname.`);
+      return client.emit('error', { message: 'Please set a nickname first.' });
     }
+
+    if (!payload.recipient || !payload.content) {
+      console.log(`[sendPrivateMessage] Error: Invalid payload.`);
+      return client.emit('error', { message: 'Recipient and content are required.' });
+    }
+
+    console.log(`[sendPrivateMessage] Received payload: ${JSON.stringify(payload)}`);
+
+    const recipientSocketId = Object.keys(this.users).find(
+      (key) => this.users[key] === payload.recipient,
+    );
+    console.log(`[sendPrivateMessage] Recipient socket ID resolved: ${recipientSocketId}`);
+
+    if (!recipientSocketId) {
+      console.log(`[sendPrivateMessage] Recipient ${payload.recipient} not found. Saving message.`);
+      await this.messageService.createPrivateMessage(sender, payload.recipient, payload.content);
+      return client.emit('privateMessageSent', { success: true, message: 'Message saved for offline recipient.' });
+    }
+
+    console.log(`[sendPrivateMessage] Delivering message to ${payload.recipient}`);
+    await this.messageService.createPrivateMessage(sender, payload.recipient, payload.content);
+
+    this.server.to(recipientSocketId).emit('newPrivateMessage', {
+      sender,
+      content: payload.content,
+      timestamp: new Date(),
+    });
+    console.log(`[sendPrivateMessage] Delivered message to ${payload.recipient}`);
+
+    client.emit('privateMessageSent', { success: true, message: 'Message delivered successfully.' });
+  }
+
   }    

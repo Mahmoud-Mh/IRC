@@ -34,12 +34,16 @@ export class MessageService {
 
   // Get private messages between two users
   async getPrivateMessages(sender: string, recipient: string): Promise<Message[]> {
-    return this.messageModel.find({
-      $or: [
-        { sender, recipient },
-        { sender: recipient, recipient: sender },
-      ],
-    }).sort({ timestamp: 1 }).exec();
-    }
-
+    console.log(`[Service] Query: sender=${sender}, recipient=${recipient}`);
+    return this.messageModel
+      .find({
+        $or: [
+          { sender, recipient },
+          { sender: recipient, recipient: sender },
+        ],
+      })
+      .sort({ timestamp: 1 })
+      .exec();
+  }
+  
 }

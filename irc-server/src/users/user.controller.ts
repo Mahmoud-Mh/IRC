@@ -27,4 +27,13 @@ export class UserController {
   async findOne(@Param('nickname') nickname: string) {
     return this.userService.getUserByNickname(nickname);
   }
+
+    @Patch(':nickname/channels/leave')
+  async leaveChannel(
+    @Param('nickname') nickname: string,
+    @Body('channel') channel: string,
+  ) {
+    return this.userService.removeUserFromChannel(nickname, channel);
+  }
+
 }

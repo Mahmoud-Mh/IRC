@@ -37,6 +37,16 @@ export class UserService {
   
     return Array.from(channels);
   }
+
+  async removeUserFromChannel(nickname: string, channel: string): Promise<User> {
+    return this.userModel.findOneAndUpdate(
+      { nickname },
+      { $pull: { channels: channel } }, // Remove the channel from the user's channels array
+      { new: true }, // Return the updated user document
+    ).exec();
+  }
+  
+  
   
   
 }
