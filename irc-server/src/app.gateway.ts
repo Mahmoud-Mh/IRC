@@ -72,30 +72,39 @@ import {
       client.emit('nicknameSet', { success: true, message: `Nickname set to ${payload.nickname}` });
     }    
     
-    // Join a channel
     @SubscribeMessage('joinChannel')
     async joinChannel(client: Socket, payload: { channel: string }) {
       console.log(`[joinChannel] Received payload:`, payload);
-
+    
       const nickname = this.users[client.id];
       if (!nickname) {
         return client.emit('error', { message: 'Please set a nickname first' });
       }
-
-      // Add the channel to the user's list of channels in the database
-      await this.userService.updateUserChannels(nickname, payload.channel);
-
-      // Add the client to the Socket.IO room for the channel
-      client.join(payload.channel);
-
-      // Notify others in the channel that a new user has joined
-      this.server.to(payload.channel).emit('userJoined', { nickname });
-      console.log(`[joinChannel] ${nickname} joined channel: ${payload.channel}`);
-
-      // Acknowledge the client
-      client.emit('channelJoined', { success: true, message: `Joined channel ${payload.channel}` });
+    
+      try {
+        // Add the channel to the user's list of channels in the database
+        await this.userService.updateUserChannels(nickname, payload.channel);
+    
+        // Add the client to the Socket.IO room for the channel
+        client.join(payload.channel);
+    
+        // Notify others in the channel that a new user has joined
+        this.server.to(payload.channel).emit('notification', {
+          type: 'userJoined',
+          message: `${nickname} has joined the channel.`,
+          timestamp: new Date(),
+        });
+    
+        console.log(`[joinChannel] ${nickname} joined channel: ${payload.channel}`);
+    
+        // Acknowledge the client
+        client.emit('channelJoined', { success: true, message: `Joined channel ${payload.channel}` });
+      } catch (error) {
+        console.error(`[joinChannel] Error:`, error);
+        client.emit('error', { message: 'Failed to join the channel.' });
+      }
     }
-
+    
     // Send a message to a channel
     @SubscribeMessage('sendMessage')
     async sendMessage(client: Socket, payload: { channel: string; content: string }) {
@@ -121,45 +130,48 @@ import {
       client.emit('messageSent', { success: true, message: 'Message sent successfully' });
     }
 
-    // Send a private message to another user
-  @SubscribeMessage('sendPrivateMessage')
-  async sendPrivateMessage(client: Socket, payload: { recipient: string; content: string }) {
-    const sender = this.users[client.id];
-    console.log(`[sendPrivateMessage] Sender: ${sender}`);
-    if (!sender) {
-      console.log(`[sendPrivateMessage] Error: Sender has no nickname.`);
-      return client.emit('error', { message: 'Please set a nickname first.' });
+    @SubscribeMessage('sendPrivateMessage')
+    async sendPrivateMessage(client: Socket, payload: { recipient: string; content: string }) {
+      const sender = this.users[client.id];
+      console.log(`[sendPrivateMessage] Sender: ${sender}`);
+      if (!sender) {
+        return client.emit('error', { message: 'Please set a nickname first.' });
+      }
+    
+      if (!payload.recipient || !payload.content) {
+        console.log(`[sendPrivateMessage] Error: Invalid payload.`);
+        return client.emit('error', { message: 'Recipient and content are required.' });
+      }
+    
+      console.log(`[sendPrivateMessage] Received payload: ${JSON.stringify(payload)}`);
+    
+      const recipientSocketId = Object.keys(this.users).find(
+        (key) => this.users[key] === payload.recipient,
+      );
+      console.log(`[sendPrivateMessage] Recipient socket ID resolved: ${recipientSocketId}`);
+    
+      try {
+        // Save the message in the database
+        await this.messageService.createPrivateMessage(sender, payload.recipient, payload.content);
+    
+        if (recipientSocketId) {
+          // Notify the recipient in real-time
+          this.server.to(recipientSocketId).emit('notification', {
+            type: 'privateMessage',
+            message: `New message from ${sender}: ${payload.content}`,
+            timestamp: new Date(),
+          });
+    
+          console.log(`[sendPrivateMessage] Delivered message to ${payload.recipient}`);
+          client.emit('privateMessageSent', { success: true, message: 'Message delivered successfully.' });
+        } else {
+          // If the recipient is offline, notify the sender
+          console.log(`[sendPrivateMessage] Recipient is offline. Message saved.`);
+          client.emit('privateMessageSent', { success: true, message: 'Message saved for offline recipient.' });
+        }
+      } catch (error) {
+        console.error(`[sendPrivateMessage] Error:`, error);
+        client.emit('error', { message: 'Failed to send the message.' });
+      }
     }
-
-    if (!payload.recipient || !payload.content) {
-      console.log(`[sendPrivateMessage] Error: Invalid payload.`);
-      return client.emit('error', { message: 'Recipient and content are required.' });
-    }
-
-    console.log(`[sendPrivateMessage] Received payload: ${JSON.stringify(payload)}`);
-
-    const recipientSocketId = Object.keys(this.users).find(
-      (key) => this.users[key] === payload.recipient,
-    );
-    console.log(`[sendPrivateMessage] Recipient socket ID resolved: ${recipientSocketId}`);
-
-    if (!recipientSocketId) {
-      console.log(`[sendPrivateMessage] Recipient ${payload.recipient} not found. Saving message.`);
-      await this.messageService.createPrivateMessage(sender, payload.recipient, payload.content);
-      return client.emit('privateMessageSent', { success: true, message: 'Message saved for offline recipient.' });
-    }
-
-    console.log(`[sendPrivateMessage] Delivering message to ${payload.recipient}`);
-    await this.messageService.createPrivateMessage(sender, payload.recipient, payload.content);
-
-    this.server.to(recipientSocketId).emit('newPrivateMessage', {
-      sender,
-      content: payload.content,
-      timestamp: new Date(),
-    });
-    console.log(`[sendPrivateMessage] Delivered message to ${payload.recipient}`);
-
-    client.emit('privateMessageSent', { success: true, message: 'Message delivered successfully.' });
-  }
-
   }    
