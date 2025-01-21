@@ -1,148 +1,116 @@
-import { Box, Typography, TextField, Button } from "@mui/material";
-
-interface Conversation {
-  id: number;
-  user: string;
-  last_message: string;
-}
+import { useEffect, useState } from "react";
+import {
+  Box,
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  TextField,
+  Button,
+} from "@mui/material";
 
 interface DetailConversationProps {
-  selectedConv: Conversation | null;
+  conversationType: "channel" | "private";
+  conversationId: string;
+  currentUser: string;
+}
+
+interface Message {
+  sender: string;
+  content: string;
+  timestamp: string;
 }
 
 export default function DetailConversation({
-  selectedConv,
+  conversationType,
+  conversationId,
+  currentUser,
 }: DetailConversationProps) {
-  if (!selectedConv) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: "100%",
-          backgroundColor: "#2C2C2C",
-          borderRadius: "10px",
-        }}
-      >
-        <Typography variant="h6" sx={{ color: "gray" }}>
-          Veuillez sélectionner une conversation.
-        </Typography>
-      </Box>
-    );
-  }
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      const endpoint =
+        conversationType === "channel"
+          ? `http://localhost:3000/messages/${conversationId}`
+          : `http://localhost:3000/messages/private?sender=${currentUser}&recipient=${conversationId}`;
+      const response = await fetch(endpoint);
+      const data = await response.json();
+      setMessages(data);
+    };
+
+    fetchMessages();
+  }, [conversationType, conversationId, currentUser]);
+
+  const handleSendMessage = async () => {
+    const endpoint =
+      conversationType === "channel"
+        ? "http://localhost:3000/messages"
+        : "http://localhost:3000/messages/private";
+
+    const payload = {
+      sender: currentUser,
+      content: newMessage,
+      ...(conversationType === "channel"
+        ? { channel: conversationId }
+        : { recipient: conversationId }),
+    };
+
+    await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    setNewMessage("");
+    // Recharge les messages
+    const response = await fetch(endpoint);
+    const data = await response.json();
+    setMessages(data);
+  };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        height: "100%",
-        backgroundColor: "#2C2C2C",
-        borderRadius: "10px",
-        padding: "20px",
-        overflowX: "hidden", // Empêche le défilement horizontal
-        width: "100%", // S'adapte à la largeur disponible
-      }}
-    >
-      {/* En-tête de la conversation */}
-      <Box
-        sx={{
-          paddingBottom: "10px",
-          borderBottom: "1px solid #444",
-          marginBottom: "10px",
-        }}
-      >
-        <Typography
-          variant="h5"
-          fontWeight="bold"
-          sx={{ color: "white", marginBottom: "5px" }}
-        >
-          {selectedConv.user}
-        </Typography>
-      </Box>
+    <Box sx={{ padding: "20px" }}>
+      <Typography variant="h5" sx={{ marginBottom: "20px" }}>
+        {conversationType === "channel"
+          ? `Channel: ${conversationId}`
+          : `Chat avec ${conversationId}`}
+      </Typography>
 
-      {/* Zone de messages */}
-      <Box
+      <List
         sx={{
-          flex: 1,
+          maxHeight: "60vh",
           overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px",
-          padding: "10px 0",
+          backgroundColor: "#222",
+          padding: "10px",
         }}
       >
-        {/* Exemple de messages */}
-        <Box
-          sx={{
-            alignSelf: "flex-start",
-            backgroundColor: "#444",
-            color: "white",
-            padding: "10px 15px",
-            borderRadius: "10px",
-            maxWidth: "70%",
-          }}
-        >
-          Salut, comment ça va ?
-        </Box>
-        <Box
-          sx={{
-            alignSelf: "flex-end",
-            backgroundColor: "#4A90E2",
-            color: "white",
-            padding: "10px 15px",
-            borderRadius: "10px",
-            maxWidth: "70%",
-          }}
-        >
-          Bien et toi ?
-        </Box>
-        <Box
-          sx={{
-            alignSelf: "flex-start",
-            backgroundColor: "#444",
-            color: "white",
-            padding: "10px 15px",
-            borderRadius: "10px",
-            maxWidth: "70%",
-          }}
-        >
-          Super, merci !
-        </Box>
-      </Box>
+        {messages.map((message, index) => (
+          <ListItem key={index}>
+            <ListItemText
+              primary={`${message.sender}: ${message.content}`}
+              secondary={new Date(message.timestamp).toLocaleString()}
+              sx={{ color: "white" }}
+            />
+          </ListItem>
+        ))}
+      </List>
 
-      {/* Barre de saisie */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: "10px",
-          marginTop: "10px",
-          backgroundColor: "#2C2C2C",
-        }}
-      >
+      <Box sx={{ display: "flex", marginTop: "20px" }}>
         <TextField
           fullWidth
-          placeholder="Écrivez votre message ici..."
           variant="outlined"
+          placeholder="Écrire un message..."
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
           sx={{
-            backgroundColor: "#333",
+            marginRight: "10px",
+            backgroundColor: "#fff",
             borderRadius: "5px",
-            input: { color: "white" },
           }}
         />
-        <Button
-          variant="contained"
-          sx={{
-            backgroundColor: "#4A90E2",
-            color: "white",
-            padding: "10px 20px",
-            borderRadius: "5px",
-            ":hover": { backgroundColor: "#357ABD" },
-          }}
-        >
+        <Button variant="contained" color="primary" onClick={handleSendMessage}>
           Envoyer
         </Button>
       </Box>
