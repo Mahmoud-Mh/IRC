@@ -1,92 +1,136 @@
+import { useEffect, useState } from "react";
 import {
-  Box,
-  Grid,
-  Card,
-  CardContent,
-  CardActionArea,
+  List,
+  ListItem,
+  ListItemText,
   Typography,
+  Divider,
+  Box,
 } from "@mui/material";
 
-interface Conversation {
-  id: number;
-  user: string;
-  last_message: string;
+interface ListConversationProps {
+  onConvSelect: (id: string) => void;
+  onTypeChange: (type: "channel" | "private") => void;
 }
 
-interface ListConversationProps {
-  onConvSelect: (conv: Conversation) => void;
+interface Channel {
+  _id: string;
+  name: string;
+}
+
+interface User {
+  nickname: string;
 }
 
 export default function ListConversation({
   onConvSelect,
+  onTypeChange,
 }: ListConversationProps) {
-  const conversations = [
-    { id: 1, user: "Mahmoud", last_message: "Salut, est-ce que tu vas bien ?" },
-    { id: 2, user: "Clément", last_message: "Rends mon argent !!!" },
-    { id: 3, user: "Jean-Michel", last_message: "Tu es très jolie <3..." },
-  ];
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [view, setView] = useState<"channel" | "private">("channel");
+
+  useEffect(() => {
+    const fetchChannels = async () => {
+      const response = await fetch("http://localhost:3000/users/channels");
+      const data = await response.json();
+      setChannels(data);
+    };
+
+    const fetchUsers = async () => {
+      const response = await fetch("http://localhost:3000/users");
+      const data = await response.json();
+      setUsers(data);
+    };
+
+    if (view === "channel") {
+      fetchChannels();
+    } else {
+      fetchUsers();
+    }
+  }, [view]);
+
+  const handleViewChange = (type: "channel" | "private") => {
+    setView(type);
+    onTypeChange(type);
+  };
 
   return (
-    <Grid
-      item
-      xs={3}
+    <Box
       sx={{
-        display: "flex",
-        flexDirection: "column",
-        height: "86vh",
-        overflowY: "auto",
-        paddingRight: "10px",
-        marginTop: "0",
-        minWidth: "30vw",
-        paddingLeft: "5px",
-        paddingTop: "5px",
-        "&::-webkit-scrollbar": {
-          width: "8px",
-        },
-        "&::-webkit-scrollbar-track": {
-          background: "#1c1c1c",
-        },
-        "&::-webkit-scrollbar-thumb": {
-          backgroundColor: "#AC5FE9",
-          borderRadius: "10px",
-        },
-        "&::-webkit-scrollbar-thumb:hover": {
-          background: "#8e44ad",
-        },
+        backgroundColor: "#1e1e1e",
+        height: "100vh",
+        padding: "10px",
+        color: "white",
       }}
     >
-      <Box>
-        {conversations.map((conv) => (
-          <Card
-            key={conv.id}
-            sx={{
-              backgroundColor: "black",
-              border: "2px solid rgb(71, 138, 220)",
-              marginBottom: 2,
-              borderRadius: "10px",
-              "&:hover": {
-                transform: "scale(1.02)",
-                boxShadow: "0 8px 16px rgba(66, 122, 241, 0.5)",
-              },
-            }}
-          >
-            <CardActionArea onClick={() => onConvSelect(conv)}>
-              <CardContent>
-                <Typography
-                  variant="h5"
-                  fontWeight="bold"
-                  sx={{ color: "white" }}
-                >
-                  {conv.user}
-                </Typography>
-                <Typography variant="body2" color="gray">
-                  {conv.last_message}
-                </Typography>
-              </CardContent>
-            </CardActionArea>
-          </Card>
-        ))}
+      <Typography variant="h5" sx={{ marginBottom: "20px" }}>
+        {view === "channel" ? "Channels" : "Utilisateurs"}
+      </Typography>
+      <Divider sx={{ marginBottom: "10px", backgroundColor: "#444" }} />
+
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: "10px",
+        }}
+      >
+        <Typography
+          variant="body1"
+          sx={{
+            cursor: "pointer",
+            color: view === "channel" ? "#478ADC" : "#aaa",
+          }}
+          onClick={() => handleViewChange("channel")}
+        >
+          Channels
+        </Typography>
+        <Typography
+          variant="body1"
+          sx={{
+            cursor: "pointer",
+            color: view === "private" ? "#478ADC" : "#aaa",
+          }}
+          onClick={() => handleViewChange("private")}
+        >
+          Utilisateurs
+        </Typography>
       </Box>
-    </Grid>
+
+      <List>
+        {view === "channel" &&
+          channels.map((channel) => (
+            <ListItem
+              key={channel._id}
+              onClick={() => onConvSelect(channel._id)}
+              sx={{
+                backgroundColor: "#333",
+                marginBottom: "10px",
+                borderRadius: "5px",
+                cursor: "pointer",
+              }}
+            >
+              <ListItemText primary={channel.name} sx={{ color: "white" }} />
+            </ListItem>
+          ))}
+
+        {view === "private" &&
+          users.map((user) => (
+            <ListItem
+              key={user.nickname}
+              onClick={() => onConvSelect(user.nickname)}
+              sx={{
+                backgroundColor: "#333",
+                marginBottom: "10px",
+                borderRadius: "5px",
+                cursor: "pointer",
+              }}
+            >
+              <ListItemText primary={user.nickname} sx={{ color: "white" }} />
+            </ListItem>
+          ))}
+      </List>
+    </Box>
   );
 }

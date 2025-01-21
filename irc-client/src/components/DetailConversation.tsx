@@ -1,60 +1,119 @@
-import { Box, Typography, Grid } from "@mui/material";
-
-interface Conversation {
-  id: number;
-  user: string;
-  last_message: string;
-}
+import { useEffect, useState } from "react";
+import {
+  Box,
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  TextField,
+  Button,
+} from "@mui/material";
 
 interface DetailConversationProps {
-  selectedConv: Conversation | null;
+  conversationType: "channel" | "private";
+  conversationId: string;
+  currentUser: string;
+}
+
+interface Message {
+  sender: string;
+  content: string;
+  timestamp: string;
 }
 
 export default function DetailConversation({
-  selectedConv,
+  conversationType,
+  conversationId,
+  currentUser,
 }: DetailConversationProps) {
-  if (!selectedConv) {
-    return (
-      <Grid item xs={6} sx={{ padding: 3 }}>
-        <Typography variant="h6" sx={{ color: "gray" }}>
-          Veuillez s&#233;lectionner une conversation.
-        </Typography>
-      </Grid>
-    );
-  }
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [newMessage, setNewMessage] = useState("");
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      const endpoint =
+        conversationType === "channel"
+          ? `http://localhost:3000/messages/${conversationId}`
+          : `http://localhost:3000/messages/private?sender=${currentUser}&recipient=${conversationId}`;
+      const response = await fetch(endpoint);
+      const data = await response.json();
+      setMessages(data);
+    };
+
+    fetchMessages();
+  }, [conversationType, conversationId, currentUser]);
+
+  const handleSendMessage = async () => {
+    const endpoint =
+      conversationType === "channel"
+        ? "http://localhost:3000/messages"
+        : "http://localhost:3000/messages/private";
+
+    const payload = {
+      sender: currentUser,
+      content: newMessage,
+      ...(conversationType === "channel"
+        ? { channel: conversationId }
+        : { recipient: conversationId }),
+    };
+
+    await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    setNewMessage("");
+    // Recharge les messages
+    const response = await fetch(endpoint);
+    const data = await response.json();
+    setMessages(data);
+  };
 
   return (
-    <Grid
-      item
-      xs={6}
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        marginTop: "0",
-      }}
-    >
-      <Box
+    <Box sx={{ padding: "20px" }}>
+      <Typography variant="h5" sx={{ marginBottom: "20px" }}>
+        {conversationType === "channel"
+          ? `Channel: ${conversationId}`
+          : `Chat avec ${conversationId}`}
+      </Typography>
+
+      <List
         sx={{
-          border: "2px solid rgb(71, 138, 220)",
-          borderRadius: "10px",
-          padding: 3,
-          height: "83vh",
+          maxHeight: "60vh",
           overflowY: "auto",
-          marginLeft: "auto",
-          backgroundColor: "black",
-          width: "100%",
+          backgroundColor: "#222",
+          padding: "10px",
         }}
       >
-        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Typography variant="h5" fontWeight="bold" sx={{ color: "white" }}>
-            {selectedConv.user}
-          </Typography>
-        </Box>
-        <Typography variant="body2" color="gray">
-          {selectedConv.last_message}
-        </Typography>
+        {messages.map((message, index) => (
+          <ListItem key={index}>
+            <ListItemText
+              primary={`${message.sender}: ${message.content}`}
+              secondary={new Date(message.timestamp).toLocaleString()}
+              sx={{ color: "white" }}
+            />
+          </ListItem>
+        ))}
+      </List>
+
+      <Box sx={{ display: "flex", marginTop: "20px" }}>
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="Écrire un message..."
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          sx={{
+            marginRight: "10px",
+            backgroundColor: "#fff",
+            borderRadius: "5px",
+          }}
+        />
+        <Button variant="contained" color="primary" onClick={handleSendMessage}>
+          Envoyer
+        </Button>
       </Box>
-    </Grid>
+    </Box>
   );
 }
