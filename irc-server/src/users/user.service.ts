@@ -11,6 +11,15 @@ export class UserService {
     return new this.userModel({ nickname }).save();
   }
 
+  async updateUserNickname(oldNickname: string, newNickname: string): Promise<User> {
+    return this.userModel.findOneAndUpdate(
+        { nickname: oldNickname },
+        { $set: { nickname: newNickname } },
+        { new: true }
+    ).exec();
+}
+
+
   async getUserByNickname(nickname: string): Promise<User> {
     return this.userModel.findOne({ nickname }).exec();
   }

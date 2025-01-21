@@ -10,6 +10,15 @@ export class UserController {
     return this.userService.createUser(nickname);
   }
 
+    @Patch(':nickname')
+  async updateNickname(
+      @Param('nickname') oldNickname: string,
+      @Body('newNickname') newNickname: string,
+  ) {
+      return this.userService.updateUserNickname(oldNickname, newNickname);
+  }
+
+
   @Patch(':nickname/channels')
   async addChannel(
     @Param('nickname') nickname: string,

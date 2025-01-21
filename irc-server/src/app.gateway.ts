@@ -71,6 +71,18 @@ import {
     
       client.emit('nicknameSet', { success: true, message: `Nickname set to ${payload.nickname}` });
     }    
+
+      @SubscribeMessage('changeNickname')
+  async changeNickname(client: Socket, payload: { oldNickname: string; newNickname: string }) {
+      const user = await this.userService.updateUserNickname(payload.oldNickname, payload.newNickname);
+      if (user) {
+          this.users[client.id] = payload.newNickname;
+          client.emit('nicknameChanged', { success: true, newNickname: payload.newNickname });
+      } else {
+          client.emit('error', { message: 'Failed to update nickname' });
+      }
+  }
+
     
     @SubscribeMessage('joinChannel')
     async joinChannel(client: Socket, payload: { channel: string }) {
