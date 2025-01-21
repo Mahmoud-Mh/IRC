@@ -1,7 +1,7 @@
 import { useState } from "react";
 import DetailConversation from "../components/DetailConversation";
 import ListConversation from "../components/ListConversation";
-import { Grid, Box } from "@mui/material";
+import { Box, Grid } from "@mui/material";
 
 interface Conversation {
   id: number;
@@ -16,29 +16,52 @@ export default function Home() {
     <Box
       sx={{
         display: "flex",
-        flexDirection: "column",
         height: "100vh",
-        width: "90vw",
-        backgroundColor: "#1e1E1E",
-        color: "white",
-        padding: "20px",
+        width: "100%",
+        backgroundColor: "#1E1E1E",
+        padding: "10px",
+        overflow: "hidden", // Évite les débordements
       }}
     >
       <Grid
         container
+        spacing={2}
         sx={{
           flexGrow: 1,
           display: "flex",
-          justifyContent: "space-between",
-          marginTop: "30px",
-          padding: "0 80px 0 40px",
         }}
       >
-        {/* Récupérer la liste des conversations */}
-        <ListConversation onConvSelect={setSelectedConv} />
+        {/* Liste des conversations */}
+        <Grid
+          item
+          xs={4}
+          sx={{
+            backgroundColor: "#2C2C2C",
+            borderRadius: "10px",
+            padding: "10px",
+            height: "100%",
+            overflowY: "auto",
+          }}
+        >
+          <ListConversation onConvSelect={setSelectedConv} />
+        </Grid>
 
-        {/* Reçoit la conversation sélectionnée */}
-        <DetailConversation selectedConv={selectedConv} />
+        {/* Détail de la conversation */}
+        <Grid
+          item
+          xs={8}
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            backgroundColor: "#2C2C2C",
+            borderRadius: "10px",
+            height: "100%",
+            padding: "10px",
+            overflow: "hidden", // Évite les débordements horizontaux
+          }}
+        >
+          <DetailConversation selectedConv={selectedConv} />
+        </Grid>
       </Grid>
     </Box>
   );
