@@ -32,43 +32,69 @@ export default function DetailConversation({
 
   useEffect(() => {
     const fetchMessages = async () => {
+      // Clear previous messages when switching conversations
+      setMessages([]);
+
       const endpoint =
         conversationType === "channel"
           ? `http://localhost:3000/messages/${conversationId}`
           : `http://localhost:3000/messages/private?sender=${currentUser}&recipient=${conversationId}`;
-      const response = await fetch(endpoint);
-      const data = await response.json();
-      setMessages(data);
+      try {
+        const response = await fetch(endpoint);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch messages: ${response.statusText}`);
+        }
+        const data = await response.json();
+        setMessages(data);
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+        // Optionally, show an error message to the user
+      }
     };
 
     fetchMessages();
 
-    // Listen for new messages
-    if (conversationType === "channel") {
-      socketService.onMessage((message) => {
-        if (message.channel === conversationId) {
-          setMessages((prev) => [...prev, message]);
-        }
-      });
-    } else {
-      socketService.onPrivateMessage((message) => {
-        if (
-          (message.sender === conversationId && message.recipient === currentUser) ||
-          (message.sender === currentUser && message.recipient === conversationId)
-        ) {
-          setMessages((prev) => [...prev, message]);
-        }
-      });
-    }
+    // Real-time message listener
+    const handleNewMessage = (message: Message) => {
+      const isRelevant =
+        (conversationType === "channel" && message.channel === conversationId) ||
+        (conversationType === "private" &&
+          (message.sender === conversationId || message.recipient === conversationId));
+
+      if (isRelevant) {
+        setMessages((prev) => [...prev, message]);
+      }
+    };
+
+    socketService.onNewMessage(handleNewMessage);
+
+    return () => {
+      socketService.offNewMessage(handleNewMessage);
+    };
   }, [conversationType, conversationId, currentUser]);
 
   const handleSendMessage = () => {
+    if (!newMessage.trim()) return;
+
     if (conversationType === "channel") {
-      socketService.sendMessage(conversationId, newMessage);
+      socketService.sendMessage(conversationId, newMessage, (response: any) => {
+        if (response.success) {
+          console.log("Message sent successfully:", response);
+        } else {
+          console.error("Failed to send message:", response);
+        }
+      });
     } else {
-      socketService.sendPrivateMessage(conversationId, newMessage);
+      socketService.sendPrivateMessage(conversationId, newMessage, (response: any) => {
+        if (response.success) {
+          console.log("Private message sent successfully:", response);
+        } else {
+          console.error("Failed to send private message:", response);
+        }
+      });
     }
-    setNewMessage("");
+
+    setNewMessage(""); // Clear the input box
   };
 
   return (
@@ -102,7 +128,7 @@ export default function DetailConversation({
         <TextField
           fullWidth
           variant="outlined"
-          placeholder="Write a message..."
+          placeholder="Type your message..."
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           sx={{

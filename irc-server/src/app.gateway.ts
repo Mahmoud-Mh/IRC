@@ -132,26 +132,41 @@ import {
     @SubscribeMessage('sendMessage')
     async sendMessage(client: Socket, payload: { channel: string; content: string }) {
       console.log(`[sendMessage] Received payload:`, payload);
-
+    
       const nickname = this.users[client.id];
       if (!nickname) {
         return client.emit('error', { message: 'Please set a nickname first' });
       }
-
-      // Save the message in the database
-      await this.messageService.createMessage(nickname, payload.channel, payload.content);
-
-      // Broadcast the message to others in the channel
-      this.server.to(payload.channel).emit('newMessage', {
-        sender: nickname,
-        content: payload.content,
-        timestamp: new Date(),
-      });
-      console.log(`[sendMessage] Message sent in ${payload.channel}: ${payload.content}`);
-
-      // Acknowledge the client
-      client.emit('messageSent', { success: true, message: 'Message sent successfully' });
+    
+      try {
+        // Save the message in the database
+        const message = await this.messageService.createMessage(
+          nickname,
+          payload.channel,
+          payload.content,
+        );
+    
+        // Broadcast the message to others in the channel
+        this.server.to(payload.channel).emit('newMessage', {
+          sender: nickname,
+          content: payload.content,
+          timestamp: new Date(),
+        });
+    
+        console.log(`[sendMessage] Message sent in ${payload.channel}: ${payload.content}`);
+    
+        // Acknowledge the client with the saved message ID
+        client.emit('messageSent', {
+          success: true,
+          message: 'Message sent successfully',
+          messageId: message._id,
+        });
+      } catch (error) {
+        console.error(`[sendMessage] Error:`, error);
+        client.emit('error', { message: 'Failed to send the message.' });
+      }
     }
+    
 
     @SubscribeMessage('sendPrivateMessage')
     async sendPrivateMessage(client: Socket, payload: { recipient: string; content: string }) {
@@ -171,26 +186,37 @@ import {
       const recipientSocketId = Object.keys(this.users).find(
         (key) => this.users[key] === payload.recipient,
       );
-      console.log(`[sendPrivateMessage] Recipient socket ID resolved: ${recipientSocketId}`);
     
       try {
         // Save the message in the database
-        await this.messageService.createPrivateMessage(sender, payload.recipient, payload.content);
+        const message = await this.messageService.createPrivateMessage(
+          sender,
+          payload.recipient,
+          payload.content,
+        );
     
         if (recipientSocketId) {
           // Notify the recipient in real-time
-          this.server.to(recipientSocketId).emit('notification', {
-            type: 'privateMessage',
-            message: `New message from ${sender}: ${payload.content}`,
+          this.server.to(recipientSocketId).emit('newPrivateMessage', {
+            sender,
+            content: payload.content,
             timestamp: new Date(),
           });
     
           console.log(`[sendPrivateMessage] Delivered message to ${payload.recipient}`);
-          client.emit('privateMessageSent', { success: true, message: 'Message delivered successfully.' });
+          client.emit('privateMessageSent', {
+            success: true,
+            message: 'Message delivered successfully',
+            messageId: message._id,
+          });
         } else {
           // If the recipient is offline, notify the sender
           console.log(`[sendPrivateMessage] Recipient is offline. Message saved.`);
-          client.emit('privateMessageSent', { success: true, message: 'Message saved for offline recipient.' });
+          client.emit('privateMessageSent', {
+            success: true,
+            message: 'Message saved for offline recipient.',
+            messageId: message._id,
+          });
         }
       } catch (error) {
         console.error(`[sendPrivateMessage] Error:`, error);
