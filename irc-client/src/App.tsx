@@ -16,8 +16,6 @@ const theme = createTheme({
 });
 
 const Layout = () => {
-  //const location = useLocation();
-
   return (
     <Box sx={{ display: "flex", height: "100%" }}>
       <Box component="main" sx={{ flexGrow: 1, height: "100%" }}>

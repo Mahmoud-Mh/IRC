@@ -8,6 +8,7 @@ import {
   TextField,
   Button,
 } from "@mui/material";
+import { socketService } from "../services/socketService";
 
 interface DetailConversationProps {
   conversationType: "channel" | "private";
@@ -41,33 +42,33 @@ export default function DetailConversation({
     };
 
     fetchMessages();
+
+    // Listen for new messages
+    if (conversationType === "channel") {
+      socketService.onMessage((message) => {
+        if (message.channel === conversationId) {
+          setMessages((prev) => [...prev, message]);
+        }
+      });
+    } else {
+      socketService.onPrivateMessage((message) => {
+        if (
+          (message.sender === conversationId && message.recipient === currentUser) ||
+          (message.sender === currentUser && message.recipient === conversationId)
+        ) {
+          setMessages((prev) => [...prev, message]);
+        }
+      });
+    }
   }, [conversationType, conversationId, currentUser]);
 
-  const handleSendMessage = async () => {
-    const endpoint =
-      conversationType === "channel"
-        ? "http://localhost:3000/messages"
-        : "http://localhost:3000/messages/private";
-
-    const payload = {
-      sender: currentUser,
-      content: newMessage,
-      ...(conversationType === "channel"
-        ? { channel: conversationId }
-        : { recipient: conversationId }),
-    };
-
-    await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
+  const handleSendMessage = () => {
+    if (conversationType === "channel") {
+      socketService.sendMessage(conversationId, newMessage);
+    } else {
+      socketService.sendPrivateMessage(conversationId, newMessage);
+    }
     setNewMessage("");
-    // Recharge les messages
-    const response = await fetch(endpoint);
-    const data = await response.json();
-    setMessages(data);
   };
 
   return (
@@ -75,7 +76,7 @@ export default function DetailConversation({
       <Typography variant="h5" sx={{ marginBottom: "20px" }}>
         {conversationType === "channel"
           ? `Channel: ${conversationId}`
-          : `Chat avec ${conversationId}`}
+          : `Chat with ${conversationId}`}
       </Typography>
 
       <List
@@ -101,7 +102,7 @@ export default function DetailConversation({
         <TextField
           fullWidth
           variant="outlined"
-          placeholder="Écrire un message..."
+          placeholder="Write a message..."
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           sx={{
@@ -111,7 +112,7 @@ export default function DetailConversation({
           }}
         />
         <Button variant="contained" color="primary" onClick={handleSendMessage}>
-          Envoyer
+          Send
         </Button>
       </Box>
     </Box>

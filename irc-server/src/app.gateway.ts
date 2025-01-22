@@ -38,39 +38,50 @@ import {
       }
     }
 
-    // Set a nickname
     @SubscribeMessage('setNickname')
     async setNickname(client: Socket, payload: { nickname: string }) {
       console.log(`[setNickname] Received payload:`, payload);
     
-      // Prevent the client from setting a nickname if one is already set
-      if (this.users[client.id]) {
-        console.log(`[setNickname] Client ${client.id} already has a nickname: ${this.users[client.id]}`);
-        return client.emit('error', { message: 'You have already set a nickname.' });
+      const currentNickname = this.users[client.id];
+    
+      // If the client already has this nickname
+      if (currentNickname && currentNickname === payload.nickname) {
+        console.log(`[setNickname] Client ${client.id} already has this nickname: ${currentNickname}`);
+        return client.emit('nicknameSet', { success: true, message: `Nickname already set to ${currentNickname}` });
       }
     
-      // Check if the nickname is already in use by another connected client
+      // If the nickname is in use by another client
       if (Object.values(this.users).includes(payload.nickname)) {
-        console.log(`[setNickname] Nickname already in use by another client: ${payload.nickname}`);
-        return client.emit('error', { message: 'Nickname already in use by another client.' });
+        console.log(`[setNickname] Nickname already in use: ${payload.nickname}`);
+        return client.emit('error', { message: 'Nickname is already in use by another user.' });
       }
     
-      // Check if the nickname exists in the database
+      // Check if nickname exists in the database
       const existingUser = await this.userService.getUserByNickname(payload.nickname);
-      if (existingUser) {
+      if (existingUser && existingUser.nickname !== currentNickname) {
         console.log(`[setNickname] Nickname already exists in database: ${payload.nickname}`);
-      } else {
-        // Save the user in the database if it doesn't exist
+        return client.emit('error', { message: 'Nickname exists in the database.' });
+      }
+    
+      // Update nickname in case it's changing
+      if (currentNickname) {
+        console.log(`[setNickname] Updating nickname for ${client.id}: ${currentNickname} -> ${payload.nickname}`);
+        delete this.users[client.id];
+      }
+    
+      // Add to database if not present
+      if (!existingUser) {
         await this.userService.createUser(payload.nickname);
         console.log(`[setNickname] New user saved in database: ${payload.nickname}`);
       }
     
-      // Assign the nickname to the client
+      // Map nickname to client
       this.users[client.id] = payload.nickname;
       console.log(`[setNickname] Current users:`, this.users);
     
       client.emit('nicknameSet', { success: true, message: `Nickname set to ${payload.nickname}` });
-    }    
+    }
+    
 
       @SubscribeMessage('changeNickname')
   async changeNickname(client: Socket, payload: { oldNickname: string; newNickname: string }) {

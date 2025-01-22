@@ -1,12 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  List,
-  ListItem,
-  ListItemText,
-  Typography,
-  Divider,
-  Box,
-} from "@mui/material";
+import { List, ListItem, ListItemText, Typography, Divider, Box } from "@mui/material";
 
 interface ListConversationProps {
   onConvSelect: (id: string) => void;
@@ -32,15 +25,23 @@ export default function ListConversation({
 
   useEffect(() => {
     const fetchChannels = async () => {
-      const response = await fetch("http://localhost:3000/users/channels");
-      const data = await response.json();
-      setChannels(data);
+      try {
+        const response = await fetch("http://localhost:3000/channels"); // Correct endpoint
+        const data = await response.json();
+        setChannels(data);
+      } catch (error) {
+        console.error("Error fetching channels:", error);
+      }
     };
 
     const fetchUsers = async () => {
-      const response = await fetch("http://localhost:3000/users");
-      const data = await response.json();
-      setUsers(data);
+      try {
+        const response = await fetch("http://localhost:3000/users");
+        const data = await response.json();
+        setUsers(data);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
     };
 
     if (view === "channel") {
@@ -65,7 +66,7 @@ export default function ListConversation({
       }}
     >
       <Typography variant="h5" sx={{ marginBottom: "20px" }}>
-        {view === "channel" ? "Channels" : "Utilisateurs"}
+        {view === "channel" ? "Channels" : "Users"}
       </Typography>
       <Divider sx={{ marginBottom: "10px", backgroundColor: "#444" }} />
 
@@ -94,7 +95,7 @@ export default function ListConversation({
           }}
           onClick={() => handleViewChange("private")}
         >
-          Utilisateurs
+          Users
         </Typography>
       </Box>
 
