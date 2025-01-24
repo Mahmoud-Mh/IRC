@@ -35,13 +35,11 @@ export class UserService {
 
   async updateUserChannels(nickname: string, channel: string): Promise<User> {
     this.logger.log(`Adding user ${nickname} to channel: ${channel}`);
-    return this.userModel
-      .findOneAndUpdate(
-        { nickname },
-        { $addToSet: { channels: channel } }, // Add the channel if not already present
-        { new: true },
-      )
-      .exec();
+    return this.userModel.findOneAndUpdate(
+      { nickname },
+      { $addToSet: { channels: channel } }, // Add the channel if not already present
+      { new: true },
+    ).exec();
   }
 
   async getUsersInChannel(channel: string): Promise<User[]> {
@@ -63,13 +61,11 @@ export class UserService {
 
   async removeUserFromChannel(nickname: string, channel: string): Promise<User> {
     this.logger.log(`Removing user ${nickname} from channel: ${channel}`);
-    return this.userModel
-      .findOneAndUpdate(
-        { nickname },
-        { $pull: { channels: channel } }, // Remove the channel from the user's channels array
-        { new: true }, // Return the updated user document
-      )
-      .exec();
+    return this.userModel.findOneAndUpdate(
+      { nickname },
+      { $pull: { channels: channel } }, // Remove the channel from the user's channels array
+      { new: true },
+    ).exec();
   }
 
   async getAllUsers(): Promise<User[]> {

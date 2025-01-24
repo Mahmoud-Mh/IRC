@@ -23,10 +23,10 @@ export default function ListConversation({
   const [users, setUsers] = useState<User[]>([]);
   const [view, setView] = useState<"channel" | "private">("channel");
 
+  // Fetch channels or users based on the view
   useEffect(() => {
     const fetchChannels = async () => {
       try {
-        console.log("Fetching channels");
         const response = await fetch("http://localhost:3000/channels");
         const data = await response.json();
         setChannels(data);
@@ -37,7 +37,6 @@ export default function ListConversation({
 
     const fetchUsers = async () => {
       try {
-        console.log("Fetching users");
         const response = await fetch("http://localhost:3000/users");
         const data = await response.json();
         setUsers(data);
@@ -53,8 +52,8 @@ export default function ListConversation({
     }
   }, [view]);
 
+  // Handle switching between channels and users
   const handleViewChange = (type: "channel" | "private") => {
-    console.log("handleViewChange to:", type)
     setView(type);
     onTypeChange(type);
   };

@@ -3,6 +3,7 @@ import { Server } from 'socket.io';
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { MessageService } from '../messages/message.service';
 import { UserService } from '../users/user.service';
+import { ChannelService } from '../channels/channel.service';
 
 @WebSocketGateway({ cors: true })
 @Injectable()
@@ -15,6 +16,7 @@ export class SocketService implements OnModuleInit {
   constructor(
     private readonly messageService: MessageService,
     private readonly userService: UserService,
+    private readonly channelService: ChannelService,
   ) {}
 
   onModuleInit() {
@@ -101,73 +103,109 @@ export class SocketService implements OnModuleInit {
   }
 
   private async handleJoinChannel(socket: any, payload: { channel: string }) {
-    console.log(`[joinChannel] Received payload:`, payload);
-    try {
-      const nickname = this.users[socket.id];
-      if (!nickname) {
-        return socket.emit('error', { success: false, message: 'Please set a nickname first' });
-      }
-
-      // Add the channel to the user's list of channels in the database
-      await this.userService.updateUserChannels(nickname, payload.channel);
-
-      // Add the client to the Socket.IO room for the channel
-      socket.join(payload.channel);
-
-      // Fetch existing messages for the channel
-      const existingMessages = await this.messageService.getMessagesByChannel(payload.channel);
-      socket.emit('existingMessages', existingMessages);
-
-      // Notify others in the channel that a new user has joined
-      this.server.to(payload.channel).emit('notification', {
-        type: 'userJoined',
-        message: `${nickname} has joined the channel.`,
-        timestamp: new Date(),
-      });
-
-      console.log(`[joinChannel] ${nickname} joined channel: ${payload.channel}`);
-
-      // Acknowledge the client
-      socket.emit('channelJoined', { success: true, message: `Joined channel ${payload.channel}` });
-    } catch (error) {
-      console.error(`[joinChannel] Error:`, error);
-      socket.emit('error', { success: false, message: 'Failed to join the channel.' });
+    const nickname = this.users[socket.id];
+    if (!nickname) {
+      return socket.emit('error', { success: false, message: 'Please set a nickname first' });
     }
+  
+    // Add the user to the channel in the database
+    await this.channelService.addUserToChannel(payload.channel, nickname);
+    await this.userService.updateUserChannels(nickname, payload.channel);
+  
+    // Join the Socket.IO room for the channel
+    socket.join(payload.channel);
+  
+    // Fetch existing messages for the channel
+    const existingMessages = await this.messageService.getMessagesByChannel(payload.channel);
+    socket.emit('existingMessages', existingMessages);
+  
+    // Notify others in the channel that a new user has joined
+    this.server.to(payload.channel).emit('notification', {
+      type: 'userJoined',
+      message: `${nickname} has joined the channel.`,
+      timestamp: new Date(),
+    });
+  
+    console.log(`[joinChannel] ${nickname} joined channel: ${payload.channel}`);
+  
+    // Acknowledge the client
+    socket.emit('channelJoined', { success: true, message: `Joined channel ${payload.channel}` });
   }
 
   private async handleSendMessage(socket: any, payload: { channel: string; content: string }) {
-    console.log(`[sendMessage] Received payload:`, payload);
-    try {
-      const nickname = this.users[socket.id];
-      if (!nickname) {
-        return socket.emit('error', { success: false, message: 'Please set a nickname first' });
+    const nickname = this.users[socket.id];
+    if (!nickname) {
+      return socket.emit('error', { success: false, message: 'Please set a nickname first' });
+    }
+  
+    const { channel, content } = payload;
+  
+    // Check if the message is a command
+    if (content.startsWith('/')) {
+      const parts = content.trim().split(' ');
+      const command = parts[0].substring(1); // Remove the leading '/'
+      const args = parts.slice(1).join(' '); // Get the rest of the message as arguments
+  
+      switch (command) {
+        case 'create':
+          if (args) {
+            await this.channelService.createChannel(args); // Marked as async
+            socket.emit('notification', {
+              type: 'channelCreated',
+              message: `Channel ${args} has been created.`,
+              timestamp: new Date(),
+            });
+          } else {
+            socket.emit('error', { success: false, message: 'Channel name is required for /create command.' });
+          }
+          break;
+  
+        case 'join':
+          if (args) {
+            await this.handleJoinChannel(socket, { channel: args }); // Marked as async
+          } else {
+            socket.emit('error', { success: false, message: 'Channel name is required for /join command.' });
+          }
+          break;
+  
+        case 'leave':
+          if (args) {
+            await this.handleLeaveChannel(socket, { channel: args }); // Marked as async
+          } else {
+            socket.emit('error', { success: false, message: 'Channel name is required for /leave command.' });
+          }
+          break;
+  
+        case 'nick':
+          if (args) {
+            await this.handleSetNickname(socket, { nickname: args }); // Marked as async
+          } else {
+            socket.emit('error', { success: false, message: 'Nickname is required for /nick command.' });
+          }
+          break;
+  
+        case 'list':
+          const channels = await this.channelService.getChannels(); // Marked as async
+          socket.emit('channelList', channels);
+          break;
+  
+        case 'users':
+          const users = await this.userService.getUsersInChannel(payload.channel); // Marked as async
+          socket.emit('userList', users);
+          break;
+  
+        default:
+          socket.emit('error', { success: false, message: `Unknown command: /${command}` });
+          break;
       }
-
-      // Save the message in the database
-      const message = await this.messageService.createMessage(
-        nickname,
-        payload.channel,
-        payload.content,
-      );
-
-      // Broadcast the message to others in the channel
-      this.server.to(payload.channel).emit('newMessage', {
+    } else {
+      // Handle regular messages
+      const message = await this.messageService.createMessage(nickname, channel, content); // Marked as async
+      this.server.to(channel).emit('newMessage', {
         sender: nickname,
-        content: payload.content,
+        content,
         timestamp: new Date(),
       });
-
-      console.log(`[sendMessage] Message sent in ${payload.channel}: ${payload.content}`);
-
-      // Acknowledge the client with the saved message ID
-      socket.emit('messageSent', {
-        success: true,
-        message: 'Message sent successfully',
-        messageId: message._id,
-      });
-    } catch (error) {
-      console.error(`[sendMessage] Error:`, error);
-      socket.emit('error', { success: false, message: 'Failed to send the message.' });
     }
   }
 
@@ -226,33 +264,28 @@ export class SocketService implements OnModuleInit {
   }
 
   private async handleLeaveChannel(socket: any, payload: { channel: string }) {
-    console.log(`[leaveChannel] Received payload:`, payload);
-    try {
-      const nickname = this.users[socket.id];
-      if (!nickname) {
-        return socket.emit('error', { success: false, message: 'Please set a nickname first' });
-      }
-
-      // Remove the user from the channel in the database
-      await this.userService.removeUserFromChannel(nickname, payload.channel);
-
-      // Remove the client from the Socket.IO room for the channel
-      socket.leave(payload.channel);
-
-      // Notify others in the channel that the user has left
-      this.server.to(payload.channel).emit('notification', {
-        type: 'userLeft',
-        message: `${nickname} has left the channel.`,
-        timestamp: new Date(),
-      });
-
-      console.log(`[leaveChannel] ${nickname} left channel: ${payload.channel}`);
-
-      // Acknowledge the client
-      socket.emit('channelLeft', { success: true, message: `Left channel ${payload.channel}` });
-    } catch (error) {
-      console.error(`[leaveChannel] Error:`, error);
-      socket.emit('error', { success: false, message: 'Failed to leave the channel.' });
+    const nickname = this.users[socket.id];
+    if (!nickname) {
+      return socket.emit('error', { success: false, message: 'Please set a nickname first' });
     }
+  
+    // Remove the user from the channel in the database
+    await this.channelService.removeUserFromChannel(payload.channel, nickname);
+    await this.userService.removeUserFromChannel(nickname, payload.channel);
+  
+    // Leave the Socket.IO room for the channel
+    socket.leave(payload.channel);
+  
+    // Notify others in the channel that the user has left
+    this.server.to(payload.channel).emit('notification', {
+      type: 'userLeft',
+      message: `${nickname} has left the channel.`,
+      timestamp: new Date(),
+    });
+  
+    console.log(`[leaveChannel] ${nickname} left channel: ${payload.channel}`);
+  
+    // Acknowledge the client
+    socket.emit('channelLeft', { success: true, message: `Left channel ${payload.channel}` });
   }
 }

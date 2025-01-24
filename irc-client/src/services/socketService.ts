@@ -1,64 +1,103 @@
-import React, { useEffect, useState } from 'react';
-import io from 'socket.io-client';
+// src/services/socketService.ts
+import { io, Socket } from "socket.io-client";
 
-const socket = io('http://localhost:3000'); // Replace with your server URL
+class SocketService {
+  private socket: Socket | null = null;
 
-const ChatComponent = ({ channel }) => {
-  const [messages, setMessages] = useState([]);
-  const [inputValue, setInputValue] = useState('');
+  connect() {
+    this.socket = io("http://localhost:3000"); // Replace with your backend URL
+  }
 
-  useEffect(() => {
-    // Join the channel when the component mounts or the channel changes
-    socket.emit('joinChannel', { channel });
-
-    // Listen for existing messages when joining the channel
-    socket.on('existingMessages', (existingMessages) => {
-      setMessages(existingMessages);
-    });
-
-    // Listen for new messages in the current channel
-    socket.on('newMessage', (message) => {
-      if (message.channel === channel) {
-        setMessages((prevMessages) => [...prevMessages, message]);
-      }
-    });
-
-    // Clean up listeners when the component unmounts or the channel changes
-    return () => {
-      socket.off('existingMessages');
-      socket.off('newMessage');
-    };
-  }, [channel]);
-
-  const sendMessage = () => {
-    if (inputValue.trim()) {
-      socket.emit('sendMessage', { channel, content: inputValue });
-      setInputValue('');
+  disconnect() {
+    if (this.socket) {
+      this.socket.disconnect();
     }
-  };
+  }
 
-  return (
-    <div>
-      <div>
-        {messages.map((msg, index) => (
-          <div key={index}>
-            <strong>{msg.sender}:</strong> {msg.content}
-          </div>
-        ))}
-      </div>
-      <input
-        type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyPress={(e) => {
-          if (e.key === 'Enter') {
-            sendMessage();
-          }
-        }}
-      />
-      <button onClick={sendMessage}>Send</button>
-    </div>
-  );
-};
+  setNickname(nickname: string) {
+    if (this.socket) {
+      this.socket.emit("setNickname", { nickname });
+    }
+  }
 
-export default ChatComponent;
+  joinChannel(channel: string) {
+    if (this.socket) {
+      this.socket.emit("joinChannel", { channel });
+    }
+  }
+
+  sendMessage(channel: string, content: string) {
+    if (this.socket) {
+      this.socket.emit("sendMessage", { channel, content });
+    }
+  }
+
+  sendPrivateMessage(recipient: string, content: string) {
+    if (this.socket) {
+      this.socket.emit("sendPrivateMessage", { recipient, content });
+    }
+  }
+
+  onNewMessage(callback: (message: any) => void) {
+    if (this.socket) {
+      this.socket.on("newMessage", callback);
+    }
+  }
+
+  offNewMessage(callback: (message: any) => void) {
+    if (this.socket) {
+      this.socket.off("newMessage", callback);
+    }
+  }
+
+  onNewPrivateMessage(callback: (message: any) => void) {
+    if (this.socket) {
+      this.socket.on("newPrivateMessage", callback);
+    }
+  }
+
+  offNewPrivateMessage(callback: (message: any) => void) {
+    if (this.socket) {
+      this.socket.off("newPrivateMessage", callback);
+    }
+  }
+
+  onChannelList(callback: (channels: string[]) => void) {
+    if (this.socket) {
+      this.socket.on("channelList", callback);
+    }
+  }
+
+  offChannelList(callback: (channels: string[]) => void) {
+    if (this.socket) {
+      this.socket.off("channelList", callback);
+    }
+  }
+
+  onUserList(callback: (users: string[]) => void) {
+    if (this.socket) {
+      this.socket.on("userList", callback);
+    }
+  }
+
+  offUserList(callback: (users: string[]) => void) {
+    if (this.socket) {
+      this.socket.off("userList", callback);
+    }
+  }
+
+  onNotification(callback: (notification: any) => void) {
+    if (this.socket) {
+      this.socket.on("notification", callback);
+    }
+  }
+
+  offNotification(callback: (notification: any) => void) {
+    if (this.socket) {
+      this.socket.off("notification", callback);
+    }
+  }
+}
+
+// Export an instance of SocketService
+export const socketService = new SocketService();

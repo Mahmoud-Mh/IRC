@@ -34,8 +34,8 @@ export class MessageService {
 
   // Get private messages between two users
   async getPrivateMessages(sender: string, recipient: string): Promise<Message[]> {
-    console.log(`[Service] Query: sender=${sender}, recipient=${recipient}`);
-    return this.messageModel
+    console.log(`[getPrivateMessages] Query: sender=${sender}, recipient=${recipient}`);
+    const messages = await this.messageModel
       .find({
         $or: [
           { sender, recipient },
@@ -44,6 +44,8 @@ export class MessageService {
       })
       .sort({ timestamp: 1 })
       .exec();
+    console.log(`[getPrivateMessages] Retrieved messages:`, messages);
+    return messages;
   }
   
 }

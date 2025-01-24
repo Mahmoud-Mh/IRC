@@ -32,6 +32,7 @@ export class ChannelService {
   }
 
   async addUserToChannel(channelName: string, nickname: string): Promise<Channel> {
+    this.logger.log(`Adding user ${nickname} to channel: ${channelName}`);
     return this.channelModel.findOneAndUpdate(
       { name: channelName },
       { $addToSet: { users: nickname } }, // Add user if not already present
@@ -40,6 +41,7 @@ export class ChannelService {
   }
 
   async removeUserFromChannel(channelName: string, nickname: string): Promise<Channel> {
+    this.logger.log(`Removing user ${nickname} from channel: ${channelName}`);
     return this.channelModel.findOneAndUpdate(
       { name: channelName },
       { $pull: { users: nickname } }, // Remove user from the channel
