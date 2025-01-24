@@ -1,19 +1,7 @@
 import { Routes, Route, BrowserRouter } from "react-router-dom";
 import Home from "./pages/Home";
-import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { Box } from "@mui/material";
 import "./App.css";
-
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: "rgb(71, 138, 220)",
-    },
-    background: {
-      default: "#1E1E1E",
-    },
-  },
-});
+import { Box } from "@mui/material";
 
 const Layout = () => {
   return (
@@ -29,11 +17,9 @@ const Layout = () => {
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <BrowserRouter>
-        <Layout />
-      </BrowserRouter>
-    </ThemeProvider>
+    <BrowserRouter>
+      <Layout />
+    </BrowserRouter>
   );
 }
 

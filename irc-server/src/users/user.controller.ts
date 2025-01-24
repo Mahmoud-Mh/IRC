@@ -1,30 +1,57 @@
-import { Controller, Get, Post, Body, Param, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Patch,
+  NotFoundException,
+} from '@nestjs/common';
 import { UserService } from './user.service';
+import { CreateUserDto, UpdateNicknameDto, AddChannelDto } from './user.dto';
 
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @Get()
+  async findAll() {
+    return this.userService.getAllUsers();
+  }
+
   @Post()
-  async create(@Body('nickname') nickname: string) {
-    return this.userService.createUser(nickname);
+  async create(@Body() createUserDto: CreateUserDto) {
+    return this.userService.createUser(createUserDto.nickname);
   }
 
-    @Patch(':nickname')
+  @Patch(':nickname')
   async updateNickname(
-      @Param('nickname') oldNickname: string,
-      @Body('newNickname') newNickname: string,
+    @Param('nickname') oldNickname: string,
+    @Body() updateNicknameDto: UpdateNicknameDto,
   ) {
-      return this.userService.updateUserNickname(oldNickname, newNickname);
+    const user = await this.userService.updateUserNickname(
+      oldNickname,
+      updateNicknameDto.newNickname,
+    );
+    if (!user) {
+      throw new NotFoundException(`User with nickname ${oldNickname} not found.`);
+    }
+    return user;
   }
-
 
   @Patch(':nickname/channels')
   async addChannel(
     @Param('nickname') nickname: string,
-    @Body('channel') channel: string,
+    @Body() addChannelDto: AddChannelDto,
   ) {
-    return this.userService.updateUserChannels(nickname, channel);
+    const user = await this.userService.updateUserChannels(
+      nickname,
+      addChannelDto.channel,
+    );
+    if (!user) {
+      throw new NotFoundException(`User with nickname ${nickname} not found.`);
+    }
+    return user;
   }
 
   @Get('channels/:channel/users')
@@ -34,15 +61,25 @@ export class UserController {
 
   @Get(':nickname')
   async findOne(@Param('nickname') nickname: string) {
-    return this.userService.getUserByNickname(nickname);
+    const user = await this.userService.getUserByNickname(nickname);
+    if (!user) {
+      throw new NotFoundException(`User with nickname ${nickname} not found.`);
+    }
+    return user;
   }
 
-    @Patch(':nickname/channels/leave')
+  @Patch(':nickname/channels/leave')
   async leaveChannel(
     @Param('nickname') nickname: string,
-    @Body('channel') channel: string,
+    @Body() addChannelDto: AddChannelDto,
   ) {
-    return this.userService.removeUserFromChannel(nickname, channel);
+    const user = await this.userService.removeUserFromChannel(
+      nickname,
+      addChannelDto.channel,
+    );
+    if (!user) {
+      throw new NotFoundException(`User with nickname ${nickname} not found.`);
+    }
+    return user;
   }
-
 }

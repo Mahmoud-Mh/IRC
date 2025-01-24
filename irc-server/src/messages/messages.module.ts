@@ -8,6 +8,6 @@ import { Message, MessageSchema } from './message.schema';
   imports: [MongooseModule.forFeature([{ name: Message.name, schema: MessageSchema }])],
   controllers: [MessageController],
   providers: [MessageService],
-  exports: [MessageService],
+  exports: [MessageService], // Export MessageService
 })
 export class MessagesModule {}

@@ -54,6 +54,7 @@ export default function ListConversation({
   }, [view]);
 
   const handleViewChange = (type: "channel" | "private") => {
+    console.log("handleViewChange to:", type)
     setView(type);
     onTypeChange(type);
   };
@@ -106,7 +107,7 @@ export default function ListConversation({
           channels.map((channel) => (
             <ListItem
               key={channel._id}
-              onClick={() => onConvSelect(channel._id)} // Select channel without re-rendering the socket
+              onClick={() => onConvSelect(channel._id)}
               sx={{
                 backgroundColor: "#333",
                 marginBottom: "10px",
@@ -116,7 +117,6 @@ export default function ListConversation({
             >
               <ListItemText primary={channel.name} sx={{ color: "white" }} />
             </ListItem>
-
           ))}
 
         {view === "private" &&
