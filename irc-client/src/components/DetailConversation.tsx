@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -20,6 +20,8 @@ interface Message {
   sender: string;
   content: string;
   timestamp: string;
+  channel?: string;
+  recipient?: string;
 }
 
 export default function DetailConversation({
@@ -29,12 +31,13 @@ export default function DetailConversation({
 }: DetailConversationProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+   const [, updateState] = useState({});
+   const forceUpdate = useCallback(() => updateState({}), []);
+
 
   useEffect(() => {
     const fetchMessages = async () => {
-      // Clear previous messages when switching conversations
-      setMessages([]);
-
+      setMessages([]); // Clear messages on conversation change
       const endpoint =
         conversationType === "channel"
           ? `http://localhost:3000/messages/${conversationId}`
@@ -48,53 +51,47 @@ export default function DetailConversation({
         setMessages(data);
       } catch (error) {
         console.error("Error fetching messages:", error);
-        // Optionally, show an error message to the user
       }
     };
 
     fetchMessages();
 
-    // Real-time message listener
     const handleNewMessage = (message: Message) => {
       const isRelevant =
         (conversationType === "channel" && message.channel === conversationId) ||
         (conversationType === "private" &&
           (message.sender === conversationId || message.recipient === conversationId));
-
       if (isRelevant) {
-        setMessages((prev) => [...prev, message]);
+        console.log("NEW MESSAGE RECEIVED:", message);
+        setMessages((prev) => {
+          console.log("Previous messages:", prev);
+          console.log("New message:", message);
+          const updatedMessages = [...prev, message];
+          console.log("Updated messages:", updatedMessages);
+           forceUpdate();
+           return updatedMessages;
+        });
       }
     };
+
 
     socketService.onNewMessage(handleNewMessage);
 
     return () => {
       socketService.offNewMessage(handleNewMessage);
     };
-  }, [conversationType, conversationId, currentUser]);
+  }, [conversationType, conversationId, currentUser, forceUpdate]);
+
 
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
 
     if (conversationType === "channel") {
-      socketService.sendMessage(conversationId, newMessage, (response: any) => {
-        if (response.success) {
-          console.log("Message sent successfully:", response);
-        } else {
-          console.error("Failed to send message:", response);
-        }
-      });
+      socketService.sendMessage(conversationId, newMessage);
     } else {
-      socketService.sendPrivateMessage(conversationId, newMessage, (response: any) => {
-        if (response.success) {
-          console.log("Private message sent successfully:", response);
-        } else {
-          console.error("Failed to send private message:", response);
-        }
-      });
+      socketService.sendPrivateMessage(conversationId, newMessage);
     }
-
-    setNewMessage(""); // Clear the input box
+    setNewMessage("");
   };
 
   return (
@@ -113,15 +110,18 @@ export default function DetailConversation({
           padding: "10px",
         }}
       >
-        {messages.map((message, index) => (
-          <ListItem key={index}>
-            <ListItemText
-              primary={`${message.sender}: ${message.content}`}
-              secondary={new Date(message.timestamp).toLocaleString()}
-              sx={{ color: "white" }}
-            />
-          </ListItem>
-        ))}
+        {messages.map((message, index) => {
+          console.log("Rendering Message:", message);
+           return (
+             <ListItem key={index}>
+              <ListItemText
+                primary={`${message.sender}: ${message.content}`}
+                secondary={new Date(message.timestamp).toLocaleString()}
+                sx={{ color: "white" }}
+              />
+            </ListItem>
+         );
+        })}
       </List>
 
       <Box sx={{ display: "flex", marginTop: "20px" }}>

@@ -103,6 +103,11 @@ export default function Home() {
         {/* Details of the selected conversation */}
         <Grid item xs={8}>
           {selectedId && (
+              console.log('Props to DetailConversation:', {
+                   conversationType: selectedType,
+                   conversationId: selectedId,
+                   currentUser: nickname,
+               }),
             <DetailConversation
               conversationType={selectedType}
               conversationId={selectedId}

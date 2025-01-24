@@ -26,7 +26,8 @@ export default function ListConversation({
   useEffect(() => {
     const fetchChannels = async () => {
       try {
-        const response = await fetch("http://localhost:3000/channels"); // Correct endpoint
+        console.log("Fetching channels");
+        const response = await fetch("http://localhost:3000/channels");
         const data = await response.json();
         setChannels(data);
       } catch (error) {
@@ -36,6 +37,7 @@ export default function ListConversation({
 
     const fetchUsers = async () => {
       try {
+        console.log("Fetching users");
         const response = await fetch("http://localhost:3000/users");
         const data = await response.json();
         setUsers(data);

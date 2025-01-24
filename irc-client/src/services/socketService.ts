@@ -8,22 +8,25 @@ export const socketService = {
   setNickname: (nickname: string) => {
     socket.emit("setNickname", { nickname });
   },
-  sendMessage: (channel: string, content: string, callback?: (response: any) => void) => {
-    socket.emit("sendMessage", { channel, content }, callback);
+  changeNickname:(oldNickname: string, newNickname: string) =>{
+    socket.emit('changeNickname', { oldNickname, newNickname });
   },
-  sendPrivateMessage: (recipient: string, content: string, callback?: (response: any) => void) => {
-    socket.emit("sendPrivateMessage", { recipient, content }, callback);
+  sendMessage: (channel: string, content: string) => {
+      socket.emit("sendMessage", { channel, content });
+  },
+  sendPrivateMessage: (recipient: string, content: string) => {
+    socket.emit("sendPrivateMessage", { recipient, content });
   },
   onNewMessage: (callback: (message: any) => void) => {
     socket.on("newMessage", callback);
   },
   offNewMessage: (callback?: (message: any) => void) => {
-    if (callback) {
-      socket.off("newMessage", callback);
-    } else {
-      socket.off("newMessage");
-    }
-  },
+        if (callback) {
+            socket.off("newMessage", callback);
+        } else {
+            socket.off("newMessage");
+        }
+    },
   onError: (callback: (error: any) => void) => {
     socket.on("error", callback);
   },
