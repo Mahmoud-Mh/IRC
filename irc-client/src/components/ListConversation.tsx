@@ -23,7 +23,6 @@ export default function ListConversation({
   const [users, setUsers] = useState<User[]>([]);
   const [view, setView] = useState<"channel" | "private">("channel");
 
-  // Fetch channels or users based on the view
   useEffect(() => {
     const fetchChannels = async () => {
       try {
@@ -52,7 +51,6 @@ export default function ListConversation({
     }
   }, [view]);
 
-  // Handle switching between channels and users
   const handleViewChange = (type: "channel" | "private") => {
     setView(type);
     onTypeChange(type);
@@ -62,7 +60,7 @@ export default function ListConversation({
     <Box
       sx={{
         backgroundColor: "#1e1e1e",
-        height: "100vh",
+        height: "100%", 
         padding: "10px",
         color: "white",
       }}

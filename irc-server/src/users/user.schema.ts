@@ -7,7 +7,7 @@ export class User extends Document {
   nickname: string;
 
   @Prop({ default: [] })
-  channels: string[]; // List of channels the user has joined
+  channels: string[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

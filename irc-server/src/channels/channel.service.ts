@@ -5,7 +5,7 @@ import { Channel } from './channel.schema';
 
 @Injectable()
 export class ChannelService {
-  private readonly logger = new Logger(ChannelService.name); // Declare Logger once
+  private readonly logger = new Logger(ChannelService.name); 
 
   constructor(@InjectModel(Channel.name) private channelModel: Model<Channel>) {}
 
@@ -35,7 +35,7 @@ export class ChannelService {
     this.logger.log(`Adding user ${nickname} to channel: ${channelName}`);
     return this.channelModel.findOneAndUpdate(
       { name: channelName },
-      { $addToSet: { users: nickname } }, // Add user if not already present
+      { $addToSet: { users: nickname } }, 
       { new: true },
     ).exec();
   }
@@ -44,7 +44,7 @@ export class ChannelService {
     this.logger.log(`Removing user ${nickname} from channel: ${channelName}`);
     return this.channelModel.findOneAndUpdate(
       { name: channelName },
-      { $pull: { users: nickname } }, // Remove user from the channel
+      { $pull: { users: nickname } }, 
       { new: true },
     ).exec();
   }

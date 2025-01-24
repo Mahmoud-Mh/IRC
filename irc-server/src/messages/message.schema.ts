@@ -10,10 +10,10 @@ export class Message extends Document {
   content: string;
 
   @Prop()
-  recipient?: string; // Optional for private messages
+  recipient?: string; 
 
   @Prop()
-  channel?: string; // Optional for channel messages
+  channel?: string; 
 
   @Prop({ required: true })
   timestamp: Date;

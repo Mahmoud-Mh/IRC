@@ -1,4 +1,3 @@
-// src/socket/socket.module.ts
 import { Module, forwardRef } from '@nestjs/common';
 import { SocketService } from './socket.service';
 import { MessagesModule } from '../messages/messages.module';

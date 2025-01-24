@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Box, Typography, List, ListItem, ListItemText, TextField, Button } from "@mui/material";
 import { socketService } from "../services/socketService";
 
@@ -23,11 +23,11 @@ export default function DetailConversation({
 }: DetailConversationProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Fetch messages and listen for new messages
   useEffect(() => {
     const fetchMessages = async () => {
-      setMessages([]); // Clear messages on conversation change
+      setMessages([]); 
       const endpoint =
         conversationType === "channel"
           ? `http://localhost:3000/messages/${conversationId}`
@@ -63,7 +63,12 @@ export default function DetailConversation({
     };
   }, [conversationType, conversationId, currentUser]);
 
-  // Send a message
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
 
@@ -76,32 +81,77 @@ export default function DetailConversation({
   };
 
   return (
-    <Box sx={{ padding: "20px", height: "100%", display: "flex", flexDirection: "column" }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%", 
+        width: "100%", 
+        padding: "20px",
+        backgroundColor: "#1e1e1e",
+        color: "white",
+      }}
+    >
+      {/* Header */}
       <Typography variant="h5" sx={{ marginBottom: "20px" }}>
         {conversationType === "channel"
           ? `Channel: ${conversationId}`
           : `Chat with ${conversationId}`}
       </Typography>
 
-      <List
+      {/* Message List */}
+      <Box
         sx={{
-          flexGrow: 1,
-          overflowY: "auto",
+          flexGrow: 1, 
+          overflowY: "auto", 
           backgroundColor: "#222",
           padding: "10px",
           borderRadius: "5px",
+          marginBottom: "20px", 
+          width: "100%", 
+          maxWidth: "100%", 
         }}
       >
-        {messages.map((message, index) => (
-          <ListItem key={index}>
-            <ListItemText
-              primary={`${message.sender}: ${message.content}`}
-              secondary={new Date(message.timestamp).toLocaleString()}
-              sx={{ color: "white" }}
-            />
-          </ListItem>
-        ))}
-      </List>
+        <List>
+          {messages.map((message, index) => (
+            <ListItem key={index}>
+              <ListItemText
+                primary={`${message.sender}: ${message.content}`}
+                secondary={new Date(message.timestamp).toLocaleString()}
+                sx={{ color: "white" }}
+              />
+            </ListItem>
+          ))}
+          {/* Empty div for auto-scrolling to the bottom */}
+          <div ref={messagesEndRef} />
+        </List>
+      </Box>
+
+      {/* Message Input */}
+      <Box
+        sx={{
+          display: "flex",
+          marginTop: "auto", 
+          width: "100%", 
+          maxWidth: "100%", 
+        }}
+      >
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="Type your message..."
+          value={newMessage}
+          onChange={(e) => setNewMessage(e.target.value)}
+          sx={{
+            marginRight: "10px",
+            backgroundColor: "#fff",
+            borderRadius: "5px",
+          }}
+        />
+        <Button variant="contained" color="primary" onClick={handleSendMessage}>
+          Send
+        </Button>
+      </Box>
     </Box>
   );
 }

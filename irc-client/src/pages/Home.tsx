@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Box, TextField, Button, Typography, Grid } from "@mui/material";
+import { useState } from "react";
+import { Box, Grid, Typography, TextField, Button } from "@mui/material";
 import ListConversation from "../components/ListConversation";
 import DetailConversation from "../components/DetailConversation";
 import { socketService } from "../services/socketService";
@@ -10,26 +10,16 @@ export default function Home() {
   const [nickname, setNickname] = useState<string>("");
   const [isNicknameSet, setIsNicknameSet] = useState<boolean>(false);
 
-  // Connect to Socket.IO and set nickname
-  useEffect(() => {
-    if (isNicknameSet) {
-      socketService.connect();
-      socketService.setNickname(nickname);
-
-      return () => {
-        socketService.disconnect();
-      };
-    }
-  }, [isNicknameSet, nickname]);
-
-  // Handle setting the nickname
   const handleSetNickname = () => {
     if (nickname.trim()) {
       setIsNicknameSet(true);
+      socketService.connect(); 
+      socketService.setNickname(nickname); 
+    } else {
+      alert("Nickname cannot be empty"); 
     }
   };
 
-  // If the nickname is not yet set, display the setup screen
   if (!isNicknameSet) {
     return (
       <Box
@@ -70,7 +60,6 @@ export default function Home() {
     );
   }
 
-  // Display the chat UI once the nickname is set
   return (
     <Box
       sx={{
@@ -79,19 +68,39 @@ export default function Home() {
         width: "100vw",
         backgroundColor: "#1e1e1e",
         color: "white",
+        overflow: "hidden", 
       }}
     >
       <Grid container>
-        {/* List of conversations */}
-        <Grid item xs={3}>
+        {/* Sidebar for channels and users */}
+        <Grid
+          item
+          xs={12} 
+          md={3} 
+          sx={{
+            height: "100vh", 
+            overflowY: "auto", 
+            borderRight: "1px solid #444",
+          }}
+        >
           <ListConversation
             onConvSelect={(id: string) => setSelectedId(id)}
             onTypeChange={(type: "channel" | "private") => setSelectedType(type)}
           />
         </Grid>
 
-        {/* Details of the selected conversation */}
-        <Grid item xs={9}>
+        {/* Main chat area */}
+        <Grid
+          item
+          xs={12} 
+          md={9} 
+          sx={{
+            height: "100vh", 
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden", 
+          }}
+        >
           {selectedId ? (
             <DetailConversation
               conversationType={selectedType}

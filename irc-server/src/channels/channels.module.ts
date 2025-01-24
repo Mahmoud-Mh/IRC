@@ -1,4 +1,3 @@
-// src/channels/channels.module.ts
 import { Module, forwardRef } from '@nestjs/common';
 import { ChannelService } from './channel.service';
 import { ChannelController } from './channel.controller';
@@ -11,7 +10,7 @@ import { SocketModule } from '../socket/socket.module';
   imports: [
     MongooseModule.forFeature([{ name: Channel.name, schema: ChannelSchema }]),
     UsersModule,
-    forwardRef(() => SocketModule), // Use forwardRef() here
+    forwardRef(() => SocketModule),
   ],
   controllers: [ChannelController],
   providers: [ChannelService],

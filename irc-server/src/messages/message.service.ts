@@ -7,7 +7,7 @@ import { Message } from './message.schema';
 export class MessageService {
   constructor(@InjectModel(Message.name) private messageModel: Model<Message>) {}
 
-  // Save a message to a channel
+  // save msg to channel 
   async createMessage(sender: string, channel: string, content: string): Promise<Message> {
     return this.messageModel.create({
       sender,
@@ -17,7 +17,7 @@ export class MessageService {
     });
   }
 
-  // Save a private message
+  // save prv msg
   async createPrivateMessage(sender: string, recipient: string, content: string): Promise<Message> {
     return this.messageModel.create({
       sender,
@@ -27,12 +27,11 @@ export class MessageService {
     });
   }
 
-  // Get all messages for a specific channel
+  // get msg by channel
   async getMessagesByChannel(channel: string): Promise<Message[]> {
     return this.messageModel.find({ channel }).sort({ timestamp: 1 }).exec();
   }
 
-  // Get private messages between two users
   async getPrivateMessages(sender: string, recipient: string): Promise<Message[]> {
     console.log(`[getPrivateMessages] Query: sender=${sender}, recipient=${recipient}`);
     const messages = await this.messageModel

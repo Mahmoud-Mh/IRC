@@ -15,7 +15,7 @@ import { SocketModule } from './socket/socket.module';
     ChannelsModule,
     MessagesModule,
     UsersModule,
-    SocketModule, // Ensure this is imported
+    SocketModule, 
   ],
   providers: [
     {

@@ -63,7 +63,7 @@ export class UserService {
     this.logger.log(`Removing user ${nickname} from channel: ${channel}`);
     return this.userModel.findOneAndUpdate(
       { nickname },
-      { $pull: { channels: channel } }, // Remove the channel from the user's channels array
+      { $pull: { channels: channel } }, 
       { new: true },
     ).exec();
   }
