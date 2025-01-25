@@ -7,6 +7,7 @@ interface Message {
   timestamp: string;
   channel?: string;
   recipient?: string;
+  localId?: string; 
 }
 
 interface Notification {
@@ -18,15 +19,15 @@ interface Notification {
 class SocketService {
   private socket: Socket | null = null;
 
-  // connetion to sockets
+  // Connection to sockets
   connect() {
     this.socket = io("http://localhost:3000", {
-      reconnection: true, 
-      reconnectionAttempts: 5, 
-      reconnectionDelay: 1000, 
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
-    // log connections
+    // Log connections
     this.socket.on("connect", () => {
       console.log("Connected to Socket.IO server");
     });
@@ -48,7 +49,7 @@ class SocketService {
     });
   }
 
-  // disconnection from sockets
+  // Disconnection from sockets
   disconnect() {
     if (this.socket) {
       this.socket.disconnect();
@@ -60,6 +61,7 @@ class SocketService {
   // Set the user's nickname
   setNickname(nickname: string) {
     if (this.socket) {
+      console.log(`Setting nickname: ${nickname}`); // Add logging
       this.socket.emit("setNickname", { nickname });
     }
   }
@@ -67,21 +69,24 @@ class SocketService {
   // Join a channel
   joinChannel(channel: string) {
     if (this.socket) {
+      console.log(`Joining channel: ${channel}`); // Add logging
       this.socket.emit("joinChannel", { channel });
     }
   }
 
   // Send a message to a channel
-  sendMessage(channel: string, content: string) {
+  sendMessage(channel: string, content: string, sender: string, localId: string) {
     if (this.socket) {
-      this.socket.emit("sendMessage", { channel, content });
+      console.log(`Sending message to channel ${channel}: ${content}`); // Add logging
+      this.socket.emit("sendMessage", { channel, content, sender, localId });
     }
   }
 
   // Send a private message to a user
-  sendPrivateMessage(recipient: string, content: string) {
+  sendPrivateMessage(recipient: string, content: string, sender: string, localId: string) {
     if (this.socket) {
-      this.socket.emit("sendPrivateMessage", { recipient, content });
+      console.log(`Sending private message to ${recipient}: ${content}`); // Add logging
+      this.socket.emit("sendPrivateMessage", { recipient, content, sender, localId });
     }
   }
 
@@ -113,34 +118,6 @@ class SocketService {
     }
   }
 
-  // Listen for channel list updates
-  onChannelList(callback: (channels: string[]) => void) {
-    if (this.socket) {
-      this.socket.on("channelList", callback);
-    }
-  }
-
-  // Stop listening for channel list updates
-  offChannelList(callback: (channels: string[]) => void) {
-    if (this.socket) {
-      this.socket.off("channelList", callback);
-    }
-  }
-
-  // Listen for user list updates
-  onUserList(callback: (users: string[]) => void) {
-    if (this.socket) {
-      this.socket.on("userList", callback);
-    }
-  }
-
-  // Stop listening for user list updates
-  offUserList(callback: (users: string[]) => void) {
-    if (this.socket) {
-      this.socket.off("userList", callback);
-    }
-  }
-
   // Listen for notifications
   onNotification(callback: (notification: Notification) => void) {
     if (this.socket) {
@@ -154,6 +131,13 @@ class SocketService {
       this.socket.off("notification", callback);
     }
   }
+
+    // Leave a channel
+    leaveChannel(channel: string) {
+      if (this.socket) {
+        this.socket.emit("leaveChannel", { channel });
+      }
+    }
 }
 
 // Export an instance of SocketService

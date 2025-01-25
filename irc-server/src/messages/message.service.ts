@@ -5,10 +5,17 @@ import { Message } from './message.schema';
 
 @Injectable()
 export class MessageService {
-  constructor(@InjectModel(Message.name) private messageModel: Model<Message>) {}
+  constructor(
+    @InjectModel(Message.name) private messageModel: Model<Message>,
+  ) {}
 
-  // save msg to channel 
-  async createMessage(sender: string, channel: string, content: string): Promise<Message> {
+  // Save message to channel
+  async createMessage(
+    sender: string,
+    channel: string,
+    content: string,
+  ): Promise<Message> {
+    console.log(`[createMessage] Saving message:`, { sender, channel, content }); // Add logging
     return this.messageModel.create({
       sender,
       channel,
@@ -17,8 +24,13 @@ export class MessageService {
     });
   }
 
-  // save prv msg
-  async createPrivateMessage(sender: string, recipient: string, content: string): Promise<Message> {
+  // Save private message
+  async createPrivateMessage(
+    sender: string,
+    recipient: string,
+    content: string,
+  ): Promise<Message> {
+    console.log(`[createPrivateMessage] Saving private message:`, { sender, recipient, content }); // Add logging
     return this.messageModel.create({
       sender,
       recipient,
@@ -27,13 +39,19 @@ export class MessageService {
     });
   }
 
-  // get msg by channel
+  // Get messages by channel
   async getMessagesByChannel(channel: string): Promise<Message[]> {
     return this.messageModel.find({ channel }).sort({ timestamp: 1 }).exec();
   }
 
-  async getPrivateMessages(sender: string, recipient: string): Promise<Message[]> {
-    console.log(`[getPrivateMessages] Query: sender=${sender}, recipient=${recipient}`);
+  // Get private messages
+  async getPrivateMessages(
+    sender: string,
+    recipient: string,
+  ): Promise<Message[]> {
+    console.log(
+      `[getPrivateMessages] Query: sender=${sender}, recipient=${recipient}`,
+    );
     const messages = await this.messageModel
       .find({
         $or: [
@@ -46,5 +64,4 @@ export class MessageService {
     console.log(`[getPrivateMessages] Retrieved messages:`, messages);
     return messages;
   }
-  
 }

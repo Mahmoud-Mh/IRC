@@ -11,7 +11,7 @@ export class SocketService implements OnModuleInit {
   @WebSocketServer()
   server: Server;
 
-  private users: Record<string, string> = {};
+  private users: Record<string, string> = {}; // Maps socket IDs to nicknames
 
   constructor(
     private readonly messageService: MessageService,
@@ -23,6 +23,7 @@ export class SocketService implements OnModuleInit {
     this.server.on('connection', (socket) => {
       console.log(`[Connection] Client connected: ${socket.id}`);
 
+      // Handle disconnection
       socket.on('disconnect', () => {
         const nickname = this.users[socket.id];
         if (nickname) {
@@ -35,39 +36,62 @@ export class SocketService implements OnModuleInit {
         }
       });
 
+      // Handle setting a nickname
       socket.on('setNickname', async (payload: { nickname: string }) => {
         await this.handleSetNickname(socket, payload);
       });
 
+      // Handle joining a channel
       socket.on('joinChannel', async (payload: { channel: string }) => {
         await this.handleJoinChannel(socket, payload);
       });
 
-      socket.on(
-        'sendMessage',
-        async (payload: { channel: string; content: string }) => {
-          await this.handleSendMessage(socket, payload);
-        },
-      );
+      // Handle sending a message to a channel
+      socket.on('sendMessage', async (payload: { channel: string; content: string; sender: string }) => {
+        console.log(`[sendMessage] Received payload:`, payload);
+        const { channel, content, sender } = payload;
+      
+        // Ensure the sender is in the channel room
+        if (!socket.rooms.has(channel)) {
+          console.log(`[sendMessage] Adding sender ${sender} to room ${channel}`);
+          socket.join(channel);
+        }
+      
+        const message = await this.messageService.createMessage(sender, channel, content);
+        console.log(`[sendMessage] Broadcasting to room ${channel}:`, message);
+        this.server.to(channel).emit('newMessage', message); // Broadcast to everyone in the room
+      });
 
-      socket.on(
-        'sendPrivateMessage',
-        async (payload: { recipient: string; content: string }) => {
-          await this.handleSendPrivateMessage(socket, payload);
-        },
-      );
+      // Handle sending a private message
+      socket.on('sendPrivateMessage', async (payload: { sender: string; recipient: string; content: string }) => {
+        console.log(`[sendPrivateMessage] Received payload:`, payload); // Add logging
+        const { sender, recipient, content } = payload;
+        if (!sender) {
+          return socket.emit('error', { success: false, message: 'Sender is undefined.' });
+        }
+        const message = await this.messageService.createPrivateMessage(sender, recipient, content);
+        console.log(`[sendPrivateMessage] Private message created:`, message); // Add logging
+        const recipientSocketId = Object.keys(this.users).find((key) => this.users[key] === recipient);
+        if (recipientSocketId) {
+          this.server.to(recipientSocketId).emit('newPrivateMessage', message);
+        }
+        socket.emit('privateMessageSent', { success: true, message: 'Message sent.' });
+      });
 
+      // Handle leaving a channel
       socket.on('leaveChannel', async (payload: { channel: string }) => {
         await this.handleLeaveChannel(socket, payload);
       });
     });
   }
 
+  // Helper method to set a nickname
   private async handleSetNickname(socket: any, payload: { nickname: string }) {
     console.log(`[setNickname] Received payload:`, payload);
     try {
       const currentNickname = this.users[socket.id];
 
+      // If the nickname is already set, return early
       if (currentNickname && currentNickname === payload.nickname) {
         console.log(
           `[setNickname] Client ${socket.id} already has this nickname: ${currentNickname}`,
@@ -78,6 +102,7 @@ export class SocketService implements OnModuleInit {
         });
       }
 
+      // Check if the nickname is already in use
       if (Object.values(this.users).includes(payload.nickname)) {
         console.log(
           `[setNickname] Nickname already in use: ${payload.nickname}`,
@@ -88,6 +113,7 @@ export class SocketService implements OnModuleInit {
         });
       }
 
+      // Check if the nickname exists in the database
       const existingUser = await this.userService.getUserByNickname(
         payload.nickname,
       );
@@ -101,6 +127,7 @@ export class SocketService implements OnModuleInit {
         });
       }
 
+      // If the user already has a nickname, update it
       if (currentNickname) {
         console.log(
           `[setNickname] Updating nickname for ${socket.id}: ${currentNickname} -> ${payload.nickname}`,
@@ -108,6 +135,7 @@ export class SocketService implements OnModuleInit {
         delete this.users[socket.id];
       }
 
+      // If the user doesn't exist, create a new user
       if (!existingUser) {
         await this.userService.createUser(payload.nickname);
         console.log(
@@ -115,9 +143,11 @@ export class SocketService implements OnModuleInit {
         );
       }
 
+      // Set the nickname for the socket
       this.users[socket.id] = payload.nickname;
       console.log(`[setNickname] Current users:`, this.users);
 
+      // Notify the client that the nickname was set
       socket.emit('nicknameSet', {
         success: true,
         message: `Nickname set to ${payload.nickname}`,
@@ -131,6 +161,7 @@ export class SocketService implements OnModuleInit {
     }
   }
 
+  // Helper method to join a channel
   private async handleJoinChannel(socket: any, payload: { channel: string }) {
     const nickname = this.users[socket.id];
     if (!nickname) {
@@ -140,16 +171,20 @@ export class SocketService implements OnModuleInit {
       });
     }
 
+    // Add the user to the channel
     await this.channelService.addUserToChannel(payload.channel, nickname);
     await this.userService.updateUserChannels(nickname, payload.channel);
 
+    // Join the channel
     socket.join(payload.channel);
 
+    // Fetch existing messages in the channel
     const existingMessages = await this.messageService.getMessagesByChannel(
       payload.channel,
     );
     socket.emit('existingMessages', existingMessages);
 
+    // Notify other users in the channel
     this.server.to(payload.channel).emit('notification', {
       type: 'userJoined',
       message: `${nickname} has joined the channel.`,
@@ -158,183 +193,14 @@ export class SocketService implements OnModuleInit {
 
     console.log(`[joinChannel] ${nickname} joined channel: ${payload.channel}`);
 
+    // Notify the client that they joined the channel
     socket.emit('channelJoined', {
       success: true,
       message: `Joined channel ${payload.channel}`,
     });
   }
 
-  private async handleSendMessage(
-    socket: any,
-    payload: { channel: string; content: string },
-  ) {
-    const nickname = this.users[socket.id];
-    if (!nickname) {
-      return socket.emit('error', {
-        success: false,
-        message: 'Please set a nickname first',
-      });
-    }
-
-    const { channel, content } = payload;
-
-    if (content.startsWith('/')) {
-      const parts = content.trim().split(' ');
-      const command = parts[0].substring(1);
-      const args = parts.slice(1).join(' ');
-
-      switch (command) {
-        case 'create':
-          if (args) {
-            await this.channelService.createChannel(args);
-            socket.emit('notification', {
-              type: 'channelCreated',
-              message: `Channel ${args} has been created.`,
-              timestamp: new Date(),
-            });
-          } else {
-            socket.emit('error', {
-              success: false,
-              message: 'Channel name is required for /create command.',
-            });
-          }
-          break;
-
-        case 'join':
-          if (args) {
-            await this.handleJoinChannel(socket, { channel: args });
-          } else {
-            socket.emit('error', {
-              success: false,
-              message: 'Channel name is required for /join command.',
-            });
-          }
-          break;
-
-        case 'leave':
-          if (args) {
-            await this.handleLeaveChannel(socket, { channel: args });
-          } else {
-            socket.emit('error', {
-              success: false,
-              message: 'Channel name is required for /leave command.',
-            });
-          }
-          break;
-
-        case 'nick':
-          if (args) {
-            await this.handleSetNickname(socket, { nickname: args });
-          } else {
-            socket.emit('error', {
-              success: false,
-              message: 'Nickname is required for /nick command.',
-            });
-          }
-          break;
-
-        case 'list':
-          const channels = await this.channelService.getChannels();
-          socket.emit('channelList', channels);
-          break;
-
-        case 'users':
-          const users = await this.userService.getUsersInChannel(
-            payload.channel,
-          );
-          socket.emit('userList', users);
-          break;
-
-        default:
-          socket.emit('error', {
-            success: false,
-            message: `Unknown command: /${command}`,
-          });
-          break;
-      }
-    } else {
-      const message = await this.messageService.createMessage(
-        nickname,
-        channel,
-        content,
-      );
-      this.server.to(channel).emit('newMessage', {
-        sender: nickname,
-        content,
-        timestamp: new Date(),
-      });
-    }
-  }
-
-  private async handleSendPrivateMessage(
-    socket: any,
-    payload: { recipient: string; content: string },
-  ) {
-    const sender = this.users[socket.id];
-    console.log(`[sendPrivateMessage] Sender: ${sender}`);
-    try {
-      if (!sender) {
-        return socket.emit('error', {
-          success: false,
-          message: 'Please set a nickname first.',
-        });
-      }
-      if (!payload.recipient || !payload.content) {
-        console.log(`[sendPrivateMessage] Error: Invalid payload.`);
-        return socket.emit('error', {
-          success: false,
-          message: 'Recipient and content are required.',
-        });
-      }
-
-      console.log(
-        `[sendPrivateMessage] Received payload: ${JSON.stringify(payload)}`,
-      );
-
-      const recipientSocketId = Object.keys(this.users).find(
-        (key) => this.users[key] === payload.recipient,
-      );
-
-      const message = await this.messageService.createPrivateMessage(
-        sender,
-        payload.recipient,
-        payload.content,
-      );
-
-      if (recipientSocketId) {
-        this.server.to(recipientSocketId).emit('newPrivateMessage', {
-          sender,
-          content: payload.content,
-          timestamp: new Date(),
-        });
-
-        console.log(
-          `[sendPrivateMessage] Delivered message to ${payload.recipient}`,
-        );
-        socket.emit('privateMessageSent', {
-          success: true,
-          message: 'Message delivered successfully',
-          messageId: message._id,
-        });
-      } else {
-        console.log(
-          `[sendPrivateMessage] Recipient is offline. Message saved.`,
-        );
-        socket.emit('privateMessageSent', {
-          success: true,
-          message: 'Message saved for offline recipient.',
-          messageId: message._id,
-        });
-      }
-    } catch (error) {
-      console.error(`[sendPrivateMessage] Error:`, error);
-      socket.emit('error', {
-        success: false,
-        message: 'Failed to send the private message.',
-      });
-    }
-  }
-
+  // Helper method to leave a channel
   private async handleLeaveChannel(socket: any, payload: { channel: string }) {
     const nickname = this.users[socket.id];
     if (!nickname) {
@@ -344,11 +210,14 @@ export class SocketService implements OnModuleInit {
       });
     }
 
+    // Remove the user from the channel
     await this.channelService.removeUserFromChannel(payload.channel, nickname);
     await this.userService.removeUserFromChannel(nickname, payload.channel);
 
+    // Leave the channel
     socket.leave(payload.channel);
 
+    // Notify other users in the channel
     this.server.to(payload.channel).emit('notification', {
       type: 'userLeft',
       message: `${nickname} has left the channel.`,
@@ -357,6 +226,7 @@ export class SocketService implements OnModuleInit {
 
     console.log(`[leaveChannel] ${nickname} left channel: ${payload.channel}`);
 
+    // Notify the client that they left the channel
     socket.emit('channelLeft', {
       success: true,
       message: `Left channel ${payload.channel}`,

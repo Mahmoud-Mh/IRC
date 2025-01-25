@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Box, Typography, List, ListItem, ListItemText, TextField, Button } from "@mui/material";
 import { socketService } from "../services/socketService";
+import { v4 as uuidv4 } from "uuid"; // Install UUID: `npm install uuid`
 
 interface DetailConversationProps {
   conversationType: "channel" | "private";
@@ -14,6 +15,7 @@ interface Message {
   timestamp: string;
   channel?: string;
   recipient?: string;
+  localId?: string; // Temporary ID for optimistic messages
 }
 
 export default function DetailConversation({
@@ -26,37 +28,44 @@ export default function DetailConversation({
   const [channelName, setChannelName] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
+  // Join/leave channel when component mounts/unmounts
+  useEffect(() => {
+    if (conversationType === "channel") {
+      socketService.joinChannel(conversationId);
+    }
+
+    return () => {
+      if (conversationType === "channel") {
+        socketService.leaveChannel(conversationId);
+      }
+    };
+  }, [conversationType, conversationId]);
+
+  // Fetch channel name (for channel conversations)
   useEffect(() => {
     if (conversationType === "channel") {
       const fetchChannelName = async () => {
         try {
           const response = await fetch(`http://localhost:3000/channels/${conversationId}`);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch channel name: ${response.statusText}`);
-          }
           const data = await response.json();
           setChannelName(data.name);
         } catch (error) {
           console.error("Error fetching channel name:", error);
         }
       };
-
       fetchChannelName();
     }
   }, [conversationType, conversationId]);
 
+  // Fetch messages and listen for new ones
   useEffect(() => {
     const fetchMessages = async () => {
-      setMessages([]);
       const endpoint =
         conversationType === "channel"
           ? `http://localhost:3000/messages/${conversationId}`
           : `http://localhost:3000/messages/private?sender=${currentUser}&recipient=${conversationId}`;
       try {
         const response = await fetch(endpoint);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch messages: ${response.statusText}`);
-        }
         const data = await response.json();
         setMessages(data);
       } catch (error) {
@@ -66,13 +75,14 @@ export default function DetailConversation({
 
     fetchMessages();
 
+    // Listen for new messages
     const handleNewMessage = (message: Message) => {
-      const isRelevant =
-        (conversationType === "channel" && message.channel === conversationId) ||
-        (conversationType === "private" &&
-          (message.sender === conversationId || message.recipient === conversationId));
-      if (isRelevant) {
-        setMessages((prevMessages) => [...prevMessages, message]);
+      // Skip if this is the sender's own optimistic message
+      const isSender = message.sender === currentUser;
+      const isDuplicate = messages.some((m) => m.localId === message.localId);
+
+      if (!isSender || !isDuplicate) {
+        setMessages((prev) => [...prev, message]);
       }
     };
 
@@ -81,23 +91,40 @@ export default function DetailConversation({
     return () => {
       socketService.offNewMessage(handleNewMessage);
     };
-  }, [conversationType, conversationId, currentUser]);
+  }, [conversationType, conversationId, currentUser, messages]);
 
+  // Auto-scroll to bottom
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   // Send message
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
 
+    // Generate a temporary ID for the optimistic message
+    const localId = uuidv4();
+
+    // Create an optimistic message
+    const optimisticMessage: Message = {
+      sender: currentUser,
+      content: newMessage,
+      timestamp: new Date().toISOString(),
+      channel: conversationType === "channel" ? conversationId : undefined,
+      recipient: conversationType === "private" ? conversationId : undefined,
+      localId, // Add temporary ID
+    };
+
+    // Optimistically update the UI
+    setMessages((prev) => [...prev, optimisticMessage]);
+
+    // Send the message via Socket.IO (include the localId)
     if (conversationType === "channel") {
-      socketService.sendMessage(conversationId, newMessage);
+      socketService.sendMessage(conversationId, newMessage, currentUser, localId);
     } else {
-      socketService.sendPrivateMessage(conversationId, newMessage);
+      socketService.sendPrivateMessage(conversationId, newMessage, currentUser, localId);
     }
+
     setNewMessage("");
   };
 
@@ -176,6 +203,7 @@ export default function DetailConversation({
           onChange={(e) => setNewMessage(e.target.value)}
           sx={{
             marginRight: "10px",
+            marginLeft: "5px",
             backgroundColor: "#fff",
             borderRadius: "5px",
           }}
@@ -186,6 +214,7 @@ export default function DetailConversation({
           onClick={handleSendMessage}
           sx={{
             minWidth: "100px",
+            marginRight: "5px",
             height: "56px",
           }}
         >
