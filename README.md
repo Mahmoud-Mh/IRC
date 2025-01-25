@@ -41,7 +41,6 @@ A modern IRC-style chat application with real-time messaging, channel management
 |----------------|------------------------------------------------------------------------------|
 | **Backend**    | NestJS, MongoDB, Socket.IO, Mongoose, Class-Validator                        |
 | **Frontend**   | React, TypeScript, Material-UI, Socket.IO Client, Vite                       |
-| **DevOps**     | Docker, PM2, Nginx                                                           |
 
 ## 📦 Installation
 
@@ -61,31 +60,24 @@ cd ../irc-client && npm install
 
 Configuration
 Backend Environment (irc-server/.env)
-ini
-Copy
+
 
 MONGODB_URI="mongodb://localhost:27017/irc"
 PORT=3000
 FRONTEND_URL="http://localhost:5173"
 
 Frontend Environment (irc-client/.env)
-ini
-Copy
 
 VITE_API_URL="http://localhost:3000"
 
 🖥️ Running the Application
 
 Start Backend Server
-bash
-Copy
 
 cd irc-server
 npm run start
 
 Start Frontend Development Server
-bash
-Copy
 
 cd irc-client
 npm run dev
@@ -127,63 +119,7 @@ userJoined	User joined channel notification
 userLeft	User left channel notification
 channelCreated	New channel created notification
 channelDeleted	Channel deleted notification
-🧪 Testing
 
-Run test suite:
-bash
-Copy
-
-cd irc-server
-npm run test
-
-Sample Test Output
-text
-Copy
-
- PASS  src/users/user.service.spec.ts
-  UserService
-    ✓ should create a new user (15ms)
-    ✓ should prevent duplicate nicknames
-
- PASS  src/channels/channel.service.spec.ts
-  ChannelService
-    ✓ should create and delete channels
-
-🚢 Deployment
-
-    Build Production Artifacts
-
-bash
-Copy
-
-# Backend
-cd irc-server && npm run build
-
-# Frontend
-cd ../irc-client && npm run build
-
-    Docker Setup
-
-dockerfile
-Copy
-
-# Sample Dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --production
-COPY . .
-CMD ["npm", "run", "start:prod"]
-
-    Recommended Production Stack
-
-    Web Server: Nginx/Caddy
-
-    Process Manager: PM2
-
-    Database: MongoDB Atlas
-
-    Hosting: AWS EC2/DigitalOcean Droplet
 
 🚨 Troubleshooting
 Issue	Solution
@@ -194,29 +130,7 @@ Socket Disconnects	Verify network/firewall configurations
 Missing Messages	Check MongoDB connection and indexes
 📜 License
 
-MIT License © 2024 [Your Name]
+MIT License © 2024 Mahmoud Mouzoun
 License
 
 Happy Chatting! 💬🚀
-For support contact: your.email@example.com
-Copy
-
-
-This complete README includes:
-1. All required sections with proper markdown formatting
-2. Code blocks with syntax highlighting
-3. Organized tables for endpoints and events
-4. Complete installation and configuration instructions
-5. Detailed deployment guidelines
-6. Comprehensive troubleshooting section
-7. License information
-8. Responsive design elements (emojis, badges)
-
-To use:
-1. Copy entire content
-2. Create new `README.md` file
-3. Paste content
-4. Replace placeholders (yourusername, your.email@example.com)
-5. Add actual project screenshots
-6. Customize as needed
-
