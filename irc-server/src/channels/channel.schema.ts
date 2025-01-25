@@ -10,4 +10,5 @@ export class Channel extends Document {
   users: string[];
 }
 
+
 export const ChannelSchema = SchemaFactory.createForClass(Channel);
