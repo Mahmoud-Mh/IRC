@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Box, Grid, Typography, TextField, Button } from "@mui/material";
+import { Box, Typography, TextField, Button } from "@mui/material";
 import ListConversation from "../components/ListConversation";
 import DetailConversation from "../components/DetailConversation";
 import { socketService } from "../services/socketService";
@@ -13,10 +13,10 @@ export default function Home() {
   const handleSetNickname = () => {
     if (nickname.trim()) {
       setIsNicknameSet(true);
-      socketService.connect(); 
-      socketService.setNickname(nickname); 
+      socketService.connect();
+      socketService.setNickname(nickname);
     } else {
-      alert("Nickname cannot be empty"); 
+      alert("Nickname cannot be empty");
     }
   };
 
@@ -68,59 +68,54 @@ export default function Home() {
         width: "100vw",
         backgroundColor: "#1e1e1e",
         color: "white",
-        overflow: "hidden", 
+        overflow: "hidden",
       }}
     >
-      <Grid container>
-        {/* Sidebar for channels and users */}
-        <Grid
-          item
-          xs={12} 
-          md={3} 
-          sx={{
-            height: "100vh", 
-            overflowY: "auto", 
-            borderRight: "1px solid #444",
-          }}
-        >
-          <ListConversation
-            onConvSelect={(id: string) => setSelectedId(id)}
-            onTypeChange={(type: "channel" | "private") => setSelectedType(type)}
-          />
-        </Grid>
+      {/* Sidebar for channels and users */}
+      <Box
+        sx={{
+          width: { xs: "100%", sm: "300px" },
+          height: "100vh",
+          overflowY: "auto",
+          borderRight: "1px solid #444",
+          flexShrink: 0,
+        }}
+      >
+        <ListConversation
+          onConvSelect={(id: string) => setSelectedId(id)}
+          onTypeChange={(type: "channel" | "private") => setSelectedType(type)}
+        />
+      </Box>
 
-        {/* Main chat area */}
-        <Grid
-          item
-          xs={12} 
-          md={9} 
-          sx={{
-            height: "100vh", 
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden", 
-          }}
-        >
-          {selectedId ? (
-            <DetailConversation
-              conversationType={selectedType}
-              conversationId={selectedId}
-              currentUser={nickname}
-            />
-          ) : (
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                height: "100%",
-              }}
-            >
-              <Typography variant="h5">Select a channel or user to start chatting</Typography>
-            </Box>
-          )}
-        </Grid>
-      </Grid>
+      {/* Main chat area */}
+      <Box
+        sx={{
+          flexGrow: 1,
+          height: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
+      >
+        {selectedId ? (
+          <DetailConversation
+            conversationType={selectedType}
+            conversationId={selectedId}
+            currentUser={nickname}
+          />
+        ) : (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100%",
+            }}
+          >
+            <Typography variant="h5">Select a channel or user to start chatting</Typography>
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 }

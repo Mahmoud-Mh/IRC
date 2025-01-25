@@ -1,20 +1,27 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Patch,
+} from '@nestjs/common';
 import { ChannelService } from './channel.service';
 import { UserService } from '../users/user.service';
-import { SocketService } from '../socket/socket.service'; // Import SocketService
+import { SocketService } from '../socket/socket.service';
 
 @Controller('channels')
 export class ChannelController {
   constructor(
     private readonly channelService: ChannelService,
     private readonly userService: UserService,
-    private readonly socketService: SocketService, // Inject SocketService
+    private readonly socketService: SocketService,
   ) {}
 
   @Post()
   async create(@Body('name') name: string) {
     const channel = await this.channelService.createChannel(name);
-    // Notify all users that a new channel has been created
     this.socketService.server.emit('notification', {
       type: 'channelCreated',
       message: `Channel ${name} has been created.`,
@@ -28,20 +35,19 @@ export class ChannelController {
     return this.channelService.getChannels();
   }
 
-  @Get('list') // Distinct route for listing channels from users
-  async listChannels() {
-    return this.userService.getAllChannels();
-  }
-
   @Delete(':name')
   async delete(@Param('name') name: string) {
     await this.channelService.deleteChannel(name);
-    // Notify all users that a channel has been deleted
     this.socketService.server.emit('notification', {
       type: 'channelDeleted',
       message: `Channel ${name} has been deleted.`,
       timestamp: new Date(),
     });
+  }
+
+  @Get(':id')
+  async getChannelById(@Param('id') id: string) {
+    return this.channelService.getChannelById(id);
   }
 
   @Patch(':name/rename')

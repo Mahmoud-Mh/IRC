@@ -23,11 +23,31 @@ export default function DetailConversation({
 }: DetailConversationProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [channelName, setChannelName] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (conversationType === "channel") {
+      const fetchChannelName = async () => {
+        try {
+          const response = await fetch(`http://localhost:3000/channels/${conversationId}`);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch channel name: ${response.statusText}`);
+          }
+          const data = await response.json();
+          setChannelName(data.name);
+        } catch (error) {
+          console.error("Error fetching channel name:", error);
+        }
+      };
+
+      fetchChannelName();
+    }
+  }, [conversationType, conversationId]);
+
+  useEffect(() => {
     const fetchMessages = async () => {
-      setMessages([]); 
+      setMessages([]);
       const endpoint =
         conversationType === "channel"
           ? `http://localhost:3000/messages/${conversationId}`
@@ -69,6 +89,7 @@ export default function DetailConversation({
     }
   }, [messages]);
 
+  // Send message
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
 
@@ -85,31 +106,41 @@ export default function DetailConversation({
       sx={{
         display: "flex",
         flexDirection: "column",
-        height: "100%", 
-        width: "100%", 
+        height: "100%",
+        width: "100%",
         padding: "20px",
         backgroundColor: "#1e1e1e",
         color: "white",
       }}
     >
       {/* Header */}
-      <Typography variant="h5" sx={{ marginBottom: "20px" }}>
-        {conversationType === "channel"
-          ? `Channel: ${conversationId}`
-          : `Chat with ${conversationId}`}
-      </Typography>
+      <Box
+        sx={{
+          position: "sticky",
+          top: 0,
+          zIndex: 1,
+          backgroundColor: "#1e1e1e",
+          paddingBottom: "10px",
+        }}
+      >
+        <Typography variant="h5">
+          {conversationType === "channel"
+            ? `Channel: ${channelName}`
+            : `Chat with ${conversationId}`}
+        </Typography>
+      </Box>
 
       {/* Message List */}
       <Box
         sx={{
-          flexGrow: 1, 
-          overflowY: "auto", 
+          flexGrow: 1,
+          overflowY: "auto",
           backgroundColor: "#222",
           padding: "10px",
           borderRadius: "5px",
-          marginBottom: "20px", 
-          width: "100%", 
-          maxWidth: "100%", 
+          marginBottom: "20px",
+          maxHeight: "calc(100vh - 200px)",
+          paddingTop: "60px",
         }}
       >
         <List>
@@ -131,9 +162,10 @@ export default function DetailConversation({
       <Box
         sx={{
           display: "flex",
-          marginTop: "auto", 
-          width: "100%", 
-          maxWidth: "100%", 
+          marginTop: "auto",
+          padding: "10px",
+          backgroundColor: "#1e1e1e",
+          borderTop: "1px solid #444",
         }}
       >
         <TextField
@@ -148,7 +180,15 @@ export default function DetailConversation({
             borderRadius: "5px",
           }}
         />
-        <Button variant="contained" color="primary" onClick={handleSendMessage}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleSendMessage}
+          sx={{
+            minWidth: "100px",
+            height: "56px",
+          }}
+        >
           Send
         </Button>
       </Box>

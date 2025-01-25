@@ -18,15 +18,15 @@ interface Notification {
 class SocketService {
   private socket: Socket | null = null;
 
-  // Connect to the Socket.IO server
+  // connetion to sockets
   connect() {
     this.socket = io("http://localhost:3000", {
-      reconnection: true, // Enable automatic reconnection
-      reconnectionAttempts: 5, // Number of reconnection attempts
-      reconnectionDelay: 1000, // Delay between reconnection attempts
+      reconnection: true, 
+      reconnectionAttempts: 5, 
+      reconnectionDelay: 1000, 
     });
 
-    // Log connection events
+    // log connections
     this.socket.on("connect", () => {
       console.log("Connected to Socket.IO server");
     });
@@ -48,7 +48,7 @@ class SocketService {
     });
   }
 
-  // Disconnect from the Socket.IO server
+  // disconnection from sockets
   disconnect() {
     if (this.socket) {
       this.socket.disconnect();

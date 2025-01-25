@@ -34,7 +34,9 @@ export class UserController {
       updateNicknameDto.newNickname,
     );
     if (!user) {
-      throw new NotFoundException(`User with nickname ${oldNickname} not found.`);
+      throw new NotFoundException(
+        `User with nickname ${oldNickname} not found.`,
+      );
     }
     return user;
   }

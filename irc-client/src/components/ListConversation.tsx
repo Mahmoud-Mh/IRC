@@ -60,7 +60,7 @@ export default function ListConversation({
     <Box
       sx={{
         backgroundColor: "#1e1e1e",
-        height: "100%", 
+        height: "100%",
         padding: "10px",
         color: "white",
       }}

@@ -11,7 +11,7 @@ async function bootstrap() {
   app.enableCors({
     origin: configService.get('FRONTEND_URL') || 'http://localhost:5173',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true, // cookies ! 
+    credentials: true, // cookies !
   });
 
   const port = configService.get('PORT') || 3000;
