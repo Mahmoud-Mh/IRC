@@ -1,8 +1,6 @@
 # 💬 IRC Client-Server Application
 
-![Project Architecture](docs/architecture.png)
-
-A modern IRC-style chat application with real-time messaging, channel management, and user presence tracking.
+A modern IRC-style chat application with real-time messaging, channel management, and user presence tracking ON GOING.
 
 ## 🚀 Features
 
@@ -51,14 +49,14 @@ A modern IRC-style chat application with real-time messaging, channel management
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/irc-project.git
+git clone https://github.com/Mahmoud-Mh/IRC.git
 cd irc-project
 
 # Install dependencies
 cd irc-server && npm install
 cd ../irc-client && npm install
 
-Configuration
+⚙️ Configuration
 Backend Environment (irc-server/.env)
 
 
