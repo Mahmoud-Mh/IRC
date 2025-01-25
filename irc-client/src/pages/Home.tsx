@@ -33,7 +33,7 @@ export default function Home() {
           color: "white",
         }}
       >
-        <Typography variant="h4" sx={{ marginBottom: "20px" }}>
+        <Typography variant="h4" sx={{ mb: 2 }}>
           Enter Your Nickname
         </Typography>
         <TextField
@@ -41,18 +41,12 @@ export default function Home() {
           placeholder="Your Nickname"
           value={nickname}
           onChange={(e) => setNickname(e.target.value)}
-          sx={{
-            marginBottom: "20px",
-            backgroundColor: "white",
-            borderRadius: "5px",
-            width: "300px",
-          }}
+          sx={{ mb: 2, bgcolor: "white", width: 300 }}
         />
         <Button
           variant="contained"
-          color="primary"
           onClick={handleSetNickname}
-          sx={{ width: "300px" }}
+          sx={{ width: 300 }}
         >
           Set Nickname
         </Button>
@@ -61,42 +55,17 @@ export default function Home() {
   }
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        height: "100vh",
-        width: "100vw",
-        backgroundColor: "#1e1e1e",
-        color: "white",
-        overflow: "hidden",
-      }}
-    >
-      {/* Sidebar for channels and users */}
-      <Box
-        sx={{
-          width: { xs: "100%", sm: "300px" },
-          height: "100vh",
-          overflowY: "auto",
-          borderRight: "1px solid #444",
-          flexShrink: 0,
-        }}
-      >
+    <Box sx={{ display: "flex", height: "100vh", bgcolor: "#1e1e1e" }}>
+      <Box sx={{ width: 300, borderRight: "1px solid #444" }}>
         <ListConversation
-          onConvSelect={(id: string) => setSelectedId(id)}
-          onTypeChange={(type: "channel" | "private") => setSelectedType(type)}
+          onConvSelect={(id: string) => {
+            setSelectedId(id);
+            setSelectedType(id.includes("-") ? "channel" : "private");
+          }}
         />
       </Box>
 
-      {/* Main chat area */}
-      <Box
-        sx={{
-          flexGrow: 1,
-          height: "100vh",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
+      <Box sx={{ flexGrow: 1 }}>
         {selectedId ? (
           <DetailConversation
             conversationType={selectedType}
@@ -110,9 +79,12 @@ export default function Home() {
               alignItems: "center",
               justifyContent: "center",
               height: "100%",
+              color: "white"
             }}
           >
-            <Typography variant="h5">Select a channel or user to start chatting</Typography>
+            <Typography variant="h5">
+              Select a channel or user to start chatting
+            </Typography>
           </Box>
         )}
       </Box>

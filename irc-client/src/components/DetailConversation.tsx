@@ -1,5 +1,13 @@
 import { useEffect, useState, useRef } from "react";
-import { Box, Typography, List, ListItem, ListItemText, TextField, Button } from "@mui/material";
+import {
+  Box,
+  Typography,
+  List,
+  ListItem,
+  ListItemText,
+  TextField,
+  Chip
+} from "@mui/material";
 import { socketService } from "../services/socketService";
 import { v4 as uuidv4 } from "uuid";
 
@@ -15,7 +23,13 @@ interface Message {
   timestamp: string;
   channel?: string;
   recipient?: string;
-  localId?: string; // Temporary ID for optimistic messages
+  localId?: string;
+}
+
+interface Notification {
+  type: string;
+  message: string;
+  timestamp: Date;
 }
 
 export default function DetailConversation({
@@ -26,41 +40,32 @@ export default function DetailConversation({
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [channelName, setChannelName] = useState<string>("");
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [channelUsers, setChannelUsers] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (conversationType === "channel") {
-      socketService.joinChannel(conversationId);
-    }
-
-    return () => {
+    const fetchInitialData = async () => {
       if (conversationType === "channel") {
-        socketService.leaveChannel(conversationId);
+        try {
+          const channelRes = await fetch(`http://localhost:3000/channels/${conversationId}`);
+          const channelData = await channelRes.json();
+          setChannelName(channelData.name);
+
+          const usersRes = await fetch(`http://localhost:3000/channels/${conversationId}/users`);
+          const usersData = await usersRes.json();
+          setChannelUsers(usersData);
+        } catch (error) {
+          console.error("Error fetching channel data:", error);
+        }
       }
     };
-  }, [conversationType, conversationId]);
 
-  useEffect(() => {
-    if (conversationType === "channel") {
-      const fetchChannelName = async () => {
-        try {
-          const response = await fetch(`http://localhost:3000/channels/${conversationId}`);
-          const data = await response.json();
-          setChannelName(data.name);
-        } catch (error) {
-          console.error("Error fetching channel name:", error);
-        }
-      };
-      fetchChannelName();
-    }
-  }, [conversationType, conversationId]);
-
-  useEffect(() => {
     const fetchMessages = async () => {
-      const endpoint =
-        conversationType === "channel"
-          ? `http://localhost:3000/messages/${conversationId}`
-          : `http://localhost:3000/messages/private?sender=${currentUser}&recipient=${conversationId}`;
+      const endpoint = conversationType === "channel"
+        ? `http://localhost:3000/messages/${conversationId}`
+        : `http://localhost:3000/messages/private?sender=${currentUser}&recipient=${conversationId}`;
+      
       try {
         const response = await fetch(endpoint);
         const data = await response.json();
@@ -70,63 +75,56 @@ export default function DetailConversation({
       }
     };
 
+    fetchInitialData();
     fetchMessages();
 
-    // Listen for new messages
     const handleNewMessage = (message: Message) => {
-      setMessages((prevMessages) => {
-        // Check if the message already exists (by localId or timestamp)
-        const isDuplicate = prevMessages.some(
-          (m) => m.localId === message.localId || m.timestamp === message.timestamp
-        );
-
-        // If it's not a duplicate, add it to the list
-        if (!isDuplicate) {
-          return [...prevMessages, message];
+      setMessages(prev => {
+        const existingIndex = prev.findIndex(m => m.localId === message.localId);
+        if (existingIndex > -1) {
+          const newMessages = [...prev];
+          newMessages[existingIndex] = message;
+          return newMessages;
         }
-
-        // If it's a duplicate, replace the optimistic message with the server's version
-        return prevMessages.map((m) =>
-          m.localId === message.localId ? message : m
-        );
+        return [...prev, message];
       });
+    };
+
+    const handleNotification = (notification: Notification) => {
+      setNotifications(prev => [...prev, notification]);
+      setTimeout(() => setNotifications(prev => prev.slice(1)), 5000);
     };
 
     socketService.onNewMessage(handleNewMessage);
     socketService.onNewPrivateMessage(handleNewMessage);
+    socketService.onNotification(handleNotification);
 
     return () => {
       socketService.offNewMessage(handleNewMessage);
       socketService.offNewPrivateMessage(handleNewMessage);
+      socketService.offNotification(handleNotification);
     };
-  }, [conversationType, conversationId, currentUser, messages]);
+  }, [conversationType, conversationId, currentUser]);
 
-  // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Send message
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
 
-    // Generate a temporary ID for the optimistic message
     const localId = uuidv4();
-
-    // Create an optimistic message
     const optimisticMessage: Message = {
       sender: currentUser,
       content: newMessage,
       timestamp: new Date().toISOString(),
       channel: conversationType === "channel" ? conversationId : undefined,
       recipient: conversationType === "private" ? conversationId : undefined,
-      localId, // Add temporary ID
+      localId,
     };
 
-    // Optimistically update the UI
-    setMessages((prev) => [...prev, optimisticMessage]);
+    setMessages(prev => [...prev, optimisticMessage]);
 
-    // Send the message via Socket.IO (include the localId)
     if (conversationType === "channel") {
       socketService.sendMessage(conversationId, newMessage, currentUser, localId);
     } else {
@@ -137,97 +135,57 @@ export default function DetailConversation({
   };
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        width: "100%",
-        padding: "20px",
-        backgroundColor: "#1e1e1e",
-        color: "white",
-      }}
-    >
-      {/* Header */}
-      <Box
-        sx={{
-          position: "sticky",
-          top: 0,
-          zIndex: 1,
-          backgroundColor: "#1e1e1e",
-          paddingBottom: "10px",
-        }}
-      >
-        <Typography variant="h5">
-          {conversationType === "channel"
-            ? `Channel: ${channelName}`
-            : `Chat with ${conversationId}`}
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", p: 2, bgcolor: "#1e1e1e" }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+        <Typography variant="h6">
+          {conversationType === "channel" ? `#${channelName}` : `@${conversationId}`}
         </Typography>
+        {conversationType === "channel" && (
+          <Box sx={{ display: "flex", gap: 1 }}>
+            {channelUsers.map(user => (
+              <Chip key={user} label={user} size="small" />
+            ))}
+          </Box>
+        )}
       </Box>
 
-      {/* Message List */}
-      <Box
-        sx={{
-          flexGrow: 1,
-          overflowY: "auto",
-          backgroundColor: "#222",
-          padding: "10px",
-          borderRadius: "5px",
-          marginBottom: "20px",
-          maxHeight: "calc(100vh - 200px)",
-          paddingTop: "60px",
-        }}
-      >
-        <List>
-          {messages.map((message, index) => (
-            <ListItem key={index}>
-              <ListItemText
-                primary={`${message.sender}: ${message.content}`}
-                secondary={new Date(message.timestamp).toLocaleString()}
-                sx={{ color: "white" }}
-              />
-            </ListItem>
-          ))}
-          {/* Empty div for auto-scrolling to the bottom */}
-          <div ref={messagesEndRef} />
-        </List>
-      </Box>
+      {notifications.map((notification, i) => (
+        <Typography key={i} color="textSecondary" sx={{ fontSize: 12, textAlign: 'center' }}>
+          {notification.message}
+        </Typography>
+      ))}
 
-      {/* Message Input */}
-      <Box
-        sx={{
-          display: "flex",
-          marginTop: "auto",
-          padding: "10px",
-          backgroundColor: "#1e1e1e",
-          borderTop: "1px solid #444",
-        }}
-      >
+      <List sx={{ flexGrow: 1, overflow: 'auto', bgcolor: '#222', borderRadius: 1, p: 1 }}>
+        {messages.map((message, i) => (
+          <ListItem key={i} sx={{ alignItems: 'flex-start' }}>
+            <ListItemText
+              primary={
+                <Typography variant="body2" color="textPrimary">
+                  <strong>{message.sender}</strong>: {message.content}
+                </Typography>
+              }
+              secondary={
+                <Typography variant="caption" color="textSecondary">
+                  {new Date(message.timestamp).toLocaleTimeString()}
+                </Typography>
+              }
+            />
+          </ListItem>
+        ))}
+        <div ref={messagesEndRef} />
+      </List>
+
+      <Box sx={{ mt: 2 }}>
         <TextField
           fullWidth
           variant="outlined"
-          placeholder="Type your message..."
+          size="small"
+          placeholder="Type message..."
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          sx={{
-            marginRight: "10px",
-            marginLeft: "5px",
-            backgroundColor: "#fff",
-            borderRadius: "5px",
-          }}
+          onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+          sx={{ bgcolor: 'background.paper' }}
         />
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleSendMessage}
-          sx={{
-            minWidth: "100px",
-            marginRight: "5px",
-            height: "56px",
-          }}
-        >
-          Send
-        </Button>
       </Box>
     </Box>
   );

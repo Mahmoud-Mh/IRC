@@ -82,7 +82,7 @@ class SocketService {
     localId: string
   ) {
     if (this.socket) {
-      console.log(`Sending message to channel ${channel}: ${content}`); // Add logging
+      console.log(`Sending message to channel ${channel}: ${content}`); 
       this.socket.emit("sendMessage", { channel, content, sender, localId });
     }
   }
@@ -95,7 +95,7 @@ class SocketService {
     localId: string
   ) {
     if (this.socket) {
-      console.log(`Sending private message to ${recipient}: ${content}`); // Add logging
+      console.log(`Sending private message to ${recipient}: ${content}`); 
       this.socket.emit("sendPrivateMessage", {
         recipient,
         content,
