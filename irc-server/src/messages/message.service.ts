@@ -9,13 +9,16 @@ export class MessageService {
     @InjectModel(Message.name) private messageModel: Model<Message>,
   ) {}
 
-  // Save message to channel
   async createMessage(
     sender: string,
     channel: string,
     content: string,
   ): Promise<Message> {
-    console.log(`[createMessage] Saving message:`, { sender, channel, content }); // Add logging
+    console.log(`[createMessage] Saving message:`, {
+      sender,
+      channel,
+      content,
+    });
     return this.messageModel.create({
       sender,
       channel,
@@ -24,13 +27,16 @@ export class MessageService {
     });
   }
 
-  // Save private message
   async createPrivateMessage(
     sender: string,
     recipient: string,
     content: string,
   ): Promise<Message> {
-    console.log(`[createPrivateMessage] Saving private message:`, { sender, recipient, content }); // Add logging
+    console.log(`[createPrivateMessage] Saving private message:`, {
+      sender,
+      recipient,
+      content,
+    }); 
     return this.messageModel.create({
       sender,
       recipient,
@@ -39,12 +45,10 @@ export class MessageService {
     });
   }
 
-  // Get messages by channel
   async getMessagesByChannel(channel: string): Promise<Message[]> {
     return this.messageModel.find({ channel }).sort({ timestamp: 1 }).exec();
   }
 
-  // Get private messages
   async getPrivateMessages(
     sender: string,
     recipient: string,

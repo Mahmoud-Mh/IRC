@@ -7,7 +7,7 @@ interface Message {
   timestamp: string;
   channel?: string;
   recipient?: string;
-  localId?: string; 
+  localId?: string;
 }
 
 interface Notification {
@@ -75,7 +75,12 @@ class SocketService {
   }
 
   // Send a message to a channel
-  sendMessage(channel: string, content: string, sender: string, localId: string) {
+  sendMessage(
+    channel: string,
+    content: string,
+    sender: string,
+    localId: string
+  ) {
     if (this.socket) {
       console.log(`Sending message to channel ${channel}: ${content}`); // Add logging
       this.socket.emit("sendMessage", { channel, content, sender, localId });
@@ -83,10 +88,20 @@ class SocketService {
   }
 
   // Send a private message to a user
-  sendPrivateMessage(recipient: string, content: string, sender: string, localId: string) {
+  sendPrivateMessage(
+    recipient: string,
+    content: string,
+    sender: string,
+    localId: string
+  ) {
     if (this.socket) {
       console.log(`Sending private message to ${recipient}: ${content}`); // Add logging
-      this.socket.emit("sendPrivateMessage", { recipient, content, sender, localId });
+      this.socket.emit("sendPrivateMessage", {
+        recipient,
+        content,
+        sender,
+        localId,
+      });
     }
   }
 
@@ -132,12 +147,12 @@ class SocketService {
     }
   }
 
-    // Leave a channel
-    leaveChannel(channel: string) {
-      if (this.socket) {
-        this.socket.emit("leaveChannel", { channel });
-      }
+  // Leave a channel
+  leaveChannel(channel: string) {
+    if (this.socket) {
+      this.socket.emit("leaveChannel", { channel });
     }
+  }
 }
 
 // Export an instance of SocketService

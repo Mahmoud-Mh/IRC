@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Box, Typography, List, ListItem, ListItemText, TextField, Button } from "@mui/material";
 import { socketService } from "../services/socketService";
-import { v4 as uuidv4 } from "uuid"; // Install UUID: `npm install uuid`
+import { v4 as uuidv4 } from "uuid";
 
 interface DetailConversationProps {
   conversationType: "channel" | "private";
@@ -28,7 +28,6 @@ export default function DetailConversation({
   const [channelName, setChannelName] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Join/leave channel when component mounts/unmounts
   useEffect(() => {
     if (conversationType === "channel") {
       socketService.joinChannel(conversationId);
@@ -41,7 +40,6 @@ export default function DetailConversation({
     };
   }, [conversationType, conversationId]);
 
-  // Fetch channel name (for channel conversations)
   useEffect(() => {
     if (conversationType === "channel") {
       const fetchChannelName = async () => {
@@ -57,7 +55,6 @@ export default function DetailConversation({
     }
   }, [conversationType, conversationId]);
 
-  // Fetch messages and listen for new ones
   useEffect(() => {
     const fetchMessages = async () => {
       const endpoint =
@@ -77,19 +74,30 @@ export default function DetailConversation({
 
     // Listen for new messages
     const handleNewMessage = (message: Message) => {
-      // Skip if this is the sender's own optimistic message
-      const isSender = message.sender === currentUser;
-      const isDuplicate = messages.some((m) => m.localId === message.localId);
+      setMessages((prevMessages) => {
+        // Check if the message already exists (by localId or timestamp)
+        const isDuplicate = prevMessages.some(
+          (m) => m.localId === message.localId || m.timestamp === message.timestamp
+        );
 
-      if (!isSender || !isDuplicate) {
-        setMessages((prev) => [...prev, message]);
-      }
+        // If it's not a duplicate, add it to the list
+        if (!isDuplicate) {
+          return [...prevMessages, message];
+        }
+
+        // If it's a duplicate, replace the optimistic message with the server's version
+        return prevMessages.map((m) =>
+          m.localId === message.localId ? message : m
+        );
+      });
     };
 
     socketService.onNewMessage(handleNewMessage);
+    socketService.onNewPrivateMessage(handleNewMessage);
 
     return () => {
       socketService.offNewMessage(handleNewMessage);
+      socketService.offNewPrivateMessage(handleNewMessage);
     };
   }, [conversationType, conversationId, currentUser, messages]);
 

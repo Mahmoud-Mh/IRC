@@ -7,7 +7,7 @@ export class Channel extends Document {
   name: string;
 
   @Prop({ default: [] })
-  users: string[]; 
+  users: string[];
 }
 
 export const ChannelSchema = SchemaFactory.createForClass(Channel);

@@ -47,36 +47,79 @@ export class SocketService implements OnModuleInit {
       });
 
       // Handle sending a message to a channel
-      socket.on('sendMessage', async (payload: { channel: string; content: string; sender: string }) => {
-        console.log(`[sendMessage] Received payload:`, payload);
-        const { channel, content, sender } = payload;
-      
-        // Ensure the sender is in the channel room
-        if (!socket.rooms.has(channel)) {
-          console.log(`[sendMessage] Adding sender ${sender} to room ${channel}`);
-          socket.join(channel);
-        }
-      
-        const message = await this.messageService.createMessage(sender, channel, content);
-        console.log(`[sendMessage] Broadcasting to room ${channel}:`, message);
-        this.server.to(channel).emit('newMessage', message); // Broadcast to everyone in the room
-      });
+      socket.on(
+        'sendMessage',
+        async (payload: {
+          channel: string;
+          content: string;
+          sender: string;
+        }) => {
+          console.log(`[sendMessage] Received payload:`, payload);
+          const { channel, content, sender } = payload;
+
+          // Ensure the sender is in the channel room
+          if (!socket.rooms.has(channel)) {
+            console.log(
+              `[sendMessage] Adding sender ${sender} to room ${channel}`,
+            );
+            socket.join(channel);
+          }
+
+          const message = await this.messageService.createMessage(
+            sender,
+            channel,
+            content,
+          );
+          console.log(
+            `[sendMessage] Broadcasting to room ${channel}:`,
+            message,
+          );
+          this.server.to(channel).emit('newMessage', message); // Broadcast to everyone in the room
+        },
+      );
 
       // Handle sending a private message
-      socket.on('sendPrivateMessage', async (payload: { sender: string; recipient: string; content: string }) => {
-        console.log(`[sendPrivateMessage] Received payload:`, payload); // Add logging
-        const { sender, recipient, content } = payload;
-        if (!sender) {
-          return socket.emit('error', { success: false, message: 'Sender is undefined.' });
-        }
-        const message = await this.messageService.createPrivateMessage(sender, recipient, content);
-        console.log(`[sendPrivateMessage] Private message created:`, message); // Add logging
-        const recipientSocketId = Object.keys(this.users).find((key) => this.users[key] === recipient);
-        if (recipientSocketId) {
-          this.server.to(recipientSocketId).emit('newPrivateMessage', message);
-        }
-        socket.emit('privateMessageSent', { success: true, message: 'Message sent.' });
-      });
+      socket.on(
+        'sendPrivateMessage',
+        async (payload: {
+          recipient: string;
+          content: string;
+          sender: string;
+          localId: string; // Temporary ID for optimistic updates
+        }) => {
+          const { recipient, content, sender, localId } = payload;
+
+          // Save the private message to the database
+          const message = await this.messageService.createPrivateMessage(
+            sender,
+            recipient,
+            content,
+          );
+
+          // Find the recipient's socket ID
+          const recipientSocketId = Object.keys(this.users).find(
+            (key) => this.users[key] === recipient,
+          );
+
+          if (recipientSocketId) {
+            this.server.to(recipientSocketId).emit('newPrivateMessage', {
+              ...message.toObject(),
+              localId, // Include the localId for duplicate filtering
+            });
+          }
+
+          // Also send the message back to the sender
+          const senderSocketId = Object.keys(this.users).find(
+            (key) => this.users[key] === sender,
+          );
+          if (senderSocketId) {
+            this.server.to(senderSocketId).emit('newPrivateMessage', {
+              ...message.toObject(),
+              localId,
+            });
+          }
+        },
+      );
 
       // Handle leaving a channel
       socket.on('leaveChannel', async (payload: { channel: string }) => {

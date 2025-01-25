@@ -34,8 +34,11 @@ export class MessageController {
     @Query('recipient') recipient: string,
   ) {
     console.log(`[Controller] sender: ${sender}, recipient: ${recipient}`);
-    const messages = await this.messageService.getPrivateMessages(sender, recipient);
+    const messages = await this.messageService.getPrivateMessages(
+      sender,
+      recipient,
+    );
     console.log(`[Controller] Messages fetched:`, messages);
     return messages;
-  }  
+  }
 }
