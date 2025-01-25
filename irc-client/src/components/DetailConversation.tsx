@@ -65,7 +65,7 @@ export default function DetailConversation({
       const endpoint = conversationType === "channel"
         ? `http://localhost:3000/messages/${conversationId}`
         : `http://localhost:3000/messages/private?sender=${currentUser}&recipient=${conversationId}`;
-      
+
       try {
         const response = await fetch(endpoint);
         const data = await response.json();

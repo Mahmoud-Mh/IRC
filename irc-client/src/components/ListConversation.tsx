@@ -56,7 +56,7 @@ export default function ListConversation({ onConvSelect }: ListConversationProps
 
   const handleCreateChannel = async () => {
     if (!newChannelName.trim()) return;
-    
+
     try {
       await fetch("http://localhost:3000/channels", {
         method: "POST",
@@ -111,48 +111,48 @@ export default function ListConversation({ onConvSelect }: ListConversationProps
       <List>
         {view === "channel"
           ? channels.map((channel) => (
-              <ListItem
-                key={channel._id}
-                sx={{
-                  bgcolor: "#333",
-                  mb: 1,
-                  borderRadius: 1,
-                  "&:hover": { bgcolor: "#444" },
-                }}
-                secondaryAction={
-                  <Button
-                    size="small"
-                    color="error"
-                    onClick={() => handleDeleteChannel(channel._id)}
-                  >
-                    Delete
-                  </Button>
-                }
-              >
-                <ListItemText
-                  primary={`#${channel.name}`}
-                  onClick={() => onConvSelect(channel._id)}
-                  sx={{ cursor: "pointer" }}
-                />
-              </ListItem>
-            ))
+            <ListItem
+              key={channel._id}
+              sx={{
+                bgcolor: "#333",
+                mb: 1,
+                borderRadius: 1,
+                "&:hover": { bgcolor: "#444" },
+              }}
+              secondaryAction={
+                <Button
+                  size="small"
+                  color="error"
+                  onClick={() => handleDeleteChannel(channel._id)}
+                >
+                  Delete
+                </Button>
+              }
+            >
+              <ListItemText
+                primary={`#${channel.name}`}
+                onClick={() => onConvSelect(channel._id)}
+                sx={{ cursor: "pointer" }}
+              />
+            </ListItem>
+          ))
           : users.map((user) => (
-              <ListItem
-                key={user.nickname}
-                sx={{
-                  bgcolor: "#333",
-                  mb: 1,
-                  borderRadius: 1,
-                  "&:hover": { bgcolor: "#444" },
-                }}
-              >
-                <ListItemText
-                  primary={`@${user.nickname}`}
-                  onClick={() => onConvSelect(user.nickname)}
-                  sx={{ cursor: "pointer" }}
-                />
-              </ListItem>
-            ))}
+            <ListItem
+              key={user.nickname}
+              sx={{
+                bgcolor: "#333",
+                mb: 1,
+                borderRadius: 1,
+                "&:hover": { bgcolor: "#444" },
+              }}
+            >
+              <ListItemText
+                primary={`@${user.nickname}`}
+                onClick={() => onConvSelect(user.nickname)}
+                sx={{ cursor: "pointer" }}
+              />
+            </ListItem>
+          ))}
       </List>
 
       <Dialog open={openCreateDialog} onClose={() => setOpenCreateDialog(false)}>

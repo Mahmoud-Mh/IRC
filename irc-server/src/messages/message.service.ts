@@ -36,7 +36,7 @@ export class MessageService {
       sender,
       recipient,
       content,
-    }); 
+    });
     return this.messageModel.create({
       sender,
       recipient,
@@ -49,14 +49,8 @@ export class MessageService {
     return this.messageModel.find({ channel }).sort({ timestamp: 1 }).exec();
   }
 
-  async getPrivateMessages(
-    sender: string,
-    recipient: string,
-  ): Promise<Message[]> {
-    console.log(
-      `[getPrivateMessages] Query: sender=${sender}, recipient=${recipient}`,
-    );
-    const messages = await this.messageModel
+  async getPrivateMessages(sender: string, recipient: string) {
+    return this.messageModel
       .find({
         $or: [
           { sender, recipient },
@@ -65,7 +59,5 @@ export class MessageService {
       })
       .sort({ timestamp: 1 })
       .exec();
-    console.log(`[getPrivateMessages] Retrieved messages:`, messages);
-    return messages;
   }
 }
