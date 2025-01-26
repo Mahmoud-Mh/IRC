@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   NotFoundException,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto, UpdateNicknameDto, AddChannelDto } from './user.dto';
@@ -15,8 +16,8 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  async findAll() {
-    return this.userService.getAllUsers();
+  async findAll(@Query('search') search?: string) {
+    return this.userService.getAllUsers(search);
   }
 
   @Post()

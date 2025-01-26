@@ -6,8 +6,12 @@ import {
   Box,
   Button,
   TextField,
-  Dialog
+  Dialog,
+  IconButton,
+  Menu,
+  MenuItem,
 } from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
 import { socketService } from "../services/socketService";
 
 interface ListConversationProps {
@@ -29,16 +33,27 @@ export default function ListConversation({ onConvSelect }: ListConversationProps
   const [view, setView] = useState<"channel" | "private">("channel");
   const [newChannelName, setNewChannelName] = useState("");
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedChannel, setSelectedChannel] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        if (view === "channel") {
-          const response = await fetch("http://localhost:3000/channels");
-          setChannels(await response.json());
+        let endpoint;
+        if (view === 'channel') {
+          endpoint = `http://localhost:3000/channels?search=${searchQuery}`;
         } else {
-          const response = await fetch("http://localhost:3000/users");
-          setUsers(await response.json());
+          endpoint = `http://localhost:3000/users?search=${searchQuery}`;
+        }
+
+        const response = await fetch(endpoint);
+        const data = await response.json();
+
+        if (view === "channel") {
+          setChannels(data);
+        } else {
+          setUsers(data);
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -52,32 +67,25 @@ export default function ListConversation({ onConvSelect }: ListConversationProps
     return () => {
       socketService.offNotification(handleChannelUpdate);
     };
-  }, [view]);
+  }, [view, searchQuery]);
 
-  const handleCreateChannel = async () => {
-    if (!newChannelName.trim()) return;
-
+  const handleRenameChannel = async (newName: string) => {
     try {
-      await fetch("http://localhost:3000/channels", {
-        method: "POST",
+      await fetch(`http://localhost:3000/channels/${selectedChannel}/rename`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newChannelName })
+        body: JSON.stringify({ newName }),
       });
-      setOpenCreateDialog(false);
-      setNewChannelName("");
     } catch (error) {
-      console.error("Error creating channel:", error);
+      console.error("Error renaming channel:", error);
+    } finally {
+      setAnchorEl(null);
     }
   };
 
-  const handleDeleteChannel = async (channelId: string) => {
-    try {
-      await fetch(`http://localhost:3000/channels/${channelId}`, {
-        method: "DELETE"
-      });
-    } catch (error) {
-      console.error("Error deleting channel:", error);
-    }
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, channelName: string) => {
+    setSelectedChannel(channelName);
+    setAnchorEl(event.currentTarget);
   };
 
   return (
@@ -96,6 +104,22 @@ export default function ListConversation({ onConvSelect }: ListConversationProps
           Users
         </Button>
       </Box>
+      <TextField
+        fullWidth
+        variant="outlined"
+        size="small"
+        placeholder={view === "channel" ? "Search channels..." : "Search users..."}
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        sx={{
+          mb: 2,
+          bgcolor: '#333',
+          '& .MuiOutlinedInput-root': {
+            color: 'white',
+            '& fieldset': { borderColor: '#444' }
+          }
+        }}
+      />
 
       {view === "channel" && (
         <Button
@@ -113,26 +137,22 @@ export default function ListConversation({ onConvSelect }: ListConversationProps
           ? channels.map((channel) => (
             <ListItem
               key={channel._id}
+              secondaryAction={
+                <IconButton onClick={(e) => handleMenuOpen(e, channel.name)}>
+                  <MenuIcon sx={{ color: "white" }} />
+                </IconButton>
+              }
               sx={{
                 bgcolor: "#333",
                 mb: 1,
                 borderRadius: 1,
                 "&:hover": { bgcolor: "#444" },
               }}
-              secondaryAction={
-                <Button
-                  size="small"
-                  color="error"
-                  onClick={() => handleDeleteChannel(channel._id)}
-                >
-                  Delete
-                </Button>
-              }
             >
               <ListItemText
                 primary={`#${channel.name}`}
                 onClick={() => onConvSelect(channel._id)}
-                sx={{ cursor: "pointer" }}
+                sx={{ cursor: "pointer", color: "white" }}
               />
             </ListItem>
           ))
@@ -149,11 +169,36 @@ export default function ListConversation({ onConvSelect }: ListConversationProps
               <ListItemText
                 primary={`@${user.nickname}`}
                 onClick={() => onConvSelect(user.nickname)}
-                sx={{ cursor: "pointer" }}
+                sx={{ cursor: "pointer", color: "white" }}
               />
             </ListItem>
           ))}
       </List>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+      >
+        <MenuItem
+          onClick={() => {
+            const newName = prompt("Enter new channel name:", selectedChannel);
+            if (newName) handleRenameChannel(newName);
+          }}
+        >
+          Rename
+        </MenuItem>
+        <MenuItem
+          onClick={async () => {
+            await fetch(`http://localhost:3000/channels/${selectedChannel}`, {
+              method: "DELETE",
+            });
+            setAnchorEl(null);
+          }}
+        >
+          Delete
+        </MenuItem>
+      </Menu>
 
       <Dialog open={openCreateDialog} onClose={() => setOpenCreateDialog(false)}>
         <Box sx={{ p: 2 }}>
@@ -166,7 +211,15 @@ export default function ListConversation({ onConvSelect }: ListConversationProps
           />
           <Button
             variant="contained"
-            onClick={handleCreateChannel}
+            onClick={async () => {
+              await fetch("http://localhost:3000/channels", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: newChannelName }),
+              });
+              setOpenCreateDialog(false);
+              setNewChannelName("");
+            }}
             fullWidth
           >
             Create

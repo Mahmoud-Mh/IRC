@@ -75,8 +75,16 @@ export class UserService {
       .exec();
   }
 
-  async getAllUsers(): Promise<User[]> {
-    this.logger.log('Fetching all users');
-    return this.userModel.find().exec();
+  async getAllUsers(search?: string): Promise<User[]> {
+    const query: any = {};
+
+    if (search) {
+      query.nickname = {
+        $regex: search,
+        $options: 'i',
+      };
+    }
+
+    return this.userModel.find(query).exec();
   }
 }

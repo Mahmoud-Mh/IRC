@@ -6,6 +6,7 @@ import {
   Param,
   Delete,
   Patch,
+  Query,
 } from '@nestjs/common';
 import { ChannelService } from './channel.service';
 import { UserService } from '../users/user.service';
@@ -31,8 +32,8 @@ export class ChannelController {
   }
 
   @Get()
-  async findAll() {
-    return this.channelService.getChannels();
+  async findAll(@Query('search') search?: string) {
+    return this.channelService.getChannels(search);
   }
 
   @Delete(':name')

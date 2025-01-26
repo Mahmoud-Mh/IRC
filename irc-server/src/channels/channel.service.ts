@@ -16,8 +16,17 @@ export class ChannelService {
     return new this.channelModel({ name }).save();
   }
 
-  async getChannels(): Promise<Channel[]> {
-    return this.channelModel.find().exec();
+  async getChannels(search?: string): Promise<Channel[]> {
+    const query: any = {};
+
+    if (search) {
+      query.name = {
+        $regex: search,
+        $options: 'i',
+      };
+    }
+
+    return this.channelModel.find(query).exec();
   }
 
   async deleteChannel(name: string): Promise<void> {
