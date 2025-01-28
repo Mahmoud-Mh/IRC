@@ -15,7 +15,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import { socketService } from "../services/socketService";
 
 interface ListConversationProps {
-  onConvSelect: (id: string) => void;
+  onConvSelect: (id: string, type: "channel" | "private") => void;
 }
 
 interface Channel {
@@ -23,37 +23,48 @@ interface Channel {
   name: string;
 }
 
-interface User {
-  nickname: string;
+interface UsersList {
+  [key: string]: string;
 }
 
 export default function ListConversation({ onConvSelect }: ListConversationProps) {
   const [channels, setChannels] = useState<Channel[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
   const [view, setView] = useState<"channel" | "private">("channel");
   const [newChannelName, setNewChannelName] = useState("");
   const [openCreateDialog, setOpenCreateDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedChannel, setSelectedChannel] = useState("");
+  const [allUsers, setAllUsers] = useState<UsersList>({});
+
+  useEffect(() => {
+    socketService.onUsersUpdate((users: UsersList) => {
+      setAllUsers(users);
+       console.log("All connected users: ", users)
+    });
+    return () => {
+      socketService.offUsersUpdate(() => {});
+    };
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         let endpoint;
-        if (view === 'channel') {
+        if (view === "channel") {
           endpoint = `http://localhost:3000/channels?search=${searchQuery}`;
         } else {
           endpoint = `http://localhost:3000/users?search=${searchQuery}`;
         }
 
-        const response = await fetch(endpoint);
-        const data = await response.json();
-
-        if (view === "channel") {
-          setChannels(data);
+        if (endpoint) {
+          const response = await fetch(endpoint);
+          const data = await response.json();
+          if (view === "channel") {
+              setChannels(data);
+          }
         } else {
-          setUsers(data);
+          console.error("Endpoint is undefined.");
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -113,11 +124,11 @@ export default function ListConversation({ onConvSelect }: ListConversationProps
         onChange={(e) => setSearchQuery(e.target.value)}
         sx={{
           mb: 2,
-          bgcolor: '#333',
-          '& .MuiOutlinedInput-root': {
-            color: 'white',
-            '& fieldset': { borderColor: '#444' }
-          }
+          bgcolor: "#333",
+          "& .MuiOutlinedInput-root": {
+            color: "white",
+            "& fieldset": { borderColor: "#444" },
+          },
         }}
       />
 
@@ -135,44 +146,44 @@ export default function ListConversation({ onConvSelect }: ListConversationProps
       <List>
         {view === "channel"
           ? channels.map((channel) => (
-            <ListItem
-              key={channel._id}
-              secondaryAction={
-                <IconButton onClick={(e) => handleMenuOpen(e, channel.name)}>
-                  <MenuIcon sx={{ color: "white" }} />
-                </IconButton>
-              }
-              sx={{
-                bgcolor: "#333",
-                mb: 1,
-                borderRadius: 1,
-                "&:hover": { bgcolor: "#444" },
-              }}
-            >
-              <ListItemText
-                primary={`#${channel.name}`}
-                onClick={() => onConvSelect(channel._id)}
-                sx={{ cursor: "pointer", color: "white" }}
-              />
-            </ListItem>
-          ))
-          : users.map((user) => (
-            <ListItem
-              key={user.nickname}
-              sx={{
-                bgcolor: "#333",
-                mb: 1,
-                borderRadius: 1,
-                "&:hover": { bgcolor: "#444" },
-              }}
-            >
-              <ListItemText
-                primary={`@${user.nickname}`}
-                onClick={() => onConvSelect(user.nickname)}
-                sx={{ cursor: "pointer", color: "white" }}
-              />
-            </ListItem>
-          ))}
+              <ListItem
+                key={channel._id}
+                secondaryAction={
+                  <IconButton onClick={(e) => handleMenuOpen(e, channel.name)}>
+                    <MenuIcon sx={{ color: "white" }} />
+                  </IconButton>
+                }
+                sx={{
+                  bgcolor: "#333",
+                  mb: 1,
+                  borderRadius: 1,
+                  "&:hover": { bgcolor: "#444" },
+                }}
+              >
+                <ListItemText
+                  primary={`#${channel.name}`}
+                    onClick={() => onConvSelect(channel._id, "channel")}
+                  sx={{ cursor: "pointer", color: "white" }}
+                />
+              </ListItem>
+            ))
+              : Object.keys(allUsers).map((user) => (
+                  <ListItem
+                      key={user}
+                    sx={{
+                      bgcolor: "#333",
+                      mb: 1,
+                      borderRadius: 1,
+                      "&:hover": { bgcolor: "#444" },
+                    }}
+                  >
+                    <ListItemText
+                        primary={`@${user}`}
+                        onClick={() => onConvSelect(user, "private")}
+                      sx={{ cursor: "pointer", color: "white" }}
+                  />
+                </ListItem>
+            ))}
       </List>
 
       <Menu

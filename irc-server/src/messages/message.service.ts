@@ -11,17 +11,17 @@ export class MessageService {
 
   async createMessage(
     sender: string,
-    channel: string,
+    channelId: string,
     content: string,
   ): Promise<Message> {
     console.log(`[createMessage] Saving message:`, {
       sender,
-      channel,
+      channelId,
       content,
     });
     return this.messageModel.create({
       sender,
-      channel,
+      channel: channelId,
       content,
       timestamp: new Date(),
     });
