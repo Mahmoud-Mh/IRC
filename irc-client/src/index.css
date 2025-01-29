@@ -1,66 +1,107 @@
+/* index.css */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Roboto', sans-serif; /* More modern font */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #121212; /* Dark background */
+  color: #ffffff; /* Light text for dark theme */
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden; /* Prevent scrollbars on main viewport */
+}
+
 #root {
   height: 100vh;
   width: 100vw;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: hidden; /* Ensure content inside root scrolls */
 }
 
 a {
   font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+  color: #bb86fc; /* Primary color - a nice purple */
+  text-decoration: none; /* Remove underlines from links */
 }
 
 a:hover {
-  color: #535bf2;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  color: #9c4eff; /* Lighter purple on hover */
 }
 
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
+  border-radius: 4px; /* Slightly less rounded buttons */
+  border: none; /* Remove default button border */
+  padding: 0.75em 1.5em; /* Adjust button padding */
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #292929; /* Darker button background */
+  color: #ffffff; /* Light button text */
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: background-color 0.3s ease; /* Smooth background transition */
 }
 
 button:hover {
-  border-color: #646cff;
+  background-color: #3d3d3d; /* Slightly lighter on hover */
 }
 
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: 2px solid #bb86fc; /* Purple outline on focus */
+  outline-offset: 2px; /* Offset outline a bit */
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
+/* Override Material UI defaults for dark theme consistency - adjust as needed */
+.MuiPaper-root,
+.MuiList-root,
+.MuiListItem-root,
+.MuiTextField-root,
+.MuiInputBase-root,
+.MuiAlert-root,
+.MuiSnackbarContent-root {
+  background-color: #1e1e1e !important; /* Darker background for components */
+  color: #ffffff !important; /* Light text for components */
+  border-color: #333 !important; /* Darker border color if needed */
+}
 
-  a:hover {
-    color: #747bff;
-  }
+.MuiOutlinedInput-notchedOutline {
+  border-color: #333 !important; /* Darker outline for text fields */
+}
+.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #bb86fc !important; /* Purple outline on focus */
+}
 
-  button {
-    background-color: #f9f9f9;
-  }
+.MuiChip-root {
+  background-color: #292929 !important; /* Darker chip background */
+  color: #ffffff !important;
+}
+.MuiChip-outlined {
+  border-color: #333 !important; /* Darker outlined chip border */
+  color: #888 !important; /* Lighter text for outlined chips */
+}
+.MuiChip-deleteIcon {
+  color: #888 !important; /* Lighter delete icon */
+}
+.MuiChip-deleteIcon:hover {
+  color: #ffffff !important; /* White delete icon on hover */
+}
+
+/* Custom scrollbar styling (optional, for webkit browsers) */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #292929;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #777;
 }

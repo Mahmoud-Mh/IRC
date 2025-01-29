@@ -1,9 +1,19 @@
-import { useState } from "react";
-import { Box, Typography, TextField, Button, AppBar, Toolbar } from "@mui/material";
+import React, { useState } from "react";
+import {
+    Box,
+    Typography,
+    TextField,
+    Button,
+    AppBar,
+    Toolbar,
+    Grid,
+    Container
+} from "@mui/material";
 import ListConversation from "../components/ListConversation";
 import DetailConversation from "../components/DetailConversation";
 import { socketService } from "../services/socketService";
 import { MessageProvider } from "../context/messageContext";
+import Logo from '../assets/epitech-logo.svg';
 
 export default function Home() {
     const [selectedType, setSelectedType] = useState<"channel" | "private">("channel");
@@ -23,59 +33,70 @@ export default function Home() {
 
     if (!isNicknameSet) {
         return (
-            <Box
-                sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: "100vh",
-                    backgroundColor: "#1e1e1e",
-                    color: "white",
-                }}
-            >
-                <Typography variant="h4" sx={{ mb: 2 }}>
-                    Enter Your Nickname
-                </Typography>
-                <TextField
-                    variant="outlined"
-                    placeholder="Your Nickname"
-                    value={nickname}
-                    onChange={(e) => setNickname(e.target.value)}
-                    sx={{ mb: 2, bgcolor: "white", width: 300 }}
-                />
-                <Button
-                    variant="contained"
-                    onClick={handleSetNickname}
-                    sx={{ width: 300 }}
+            <Container component="main" maxWidth="xs">
+                <Box
+                    sx={{
+                        marginTop: 8,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                    }}
                 >
-                    Set Nickname
-                </Button>
-            </Box>
+                    <img src={Logo} alt="Epitech Logo" style={{ height: 80, marginBottom: 2 }} />
+                    <Typography variant="h4" component="h1" gutterBottom sx={{ color: 'white' }}>
+                        Welcome to IRC
+                    </Typography>
+                    <Typography variant="subtitle1" sx={{ color: 'grey', marginBottom: 3, textAlign: 'center' }}>
+                        Enter your nickname to join the chat.
+                    </Typography>
+                    <TextField
+                        variant="outlined"
+                        margin="normal"
+                        required
+                        fullWidth
+                        id="nickname-input"
+                        label="Nickname"
+                        placeholder="Your Nickname"
+                        value={nickname}
+                        onChange={(e) => setNickname(e.target.value)}
+                        autoFocus
+                        sx={{ backgroundColor: '#292929', input: { color: 'white' } }}
+                    />
+                    <Button
+                        fullWidth
+                        variant="contained"
+                        color="primary"
+                        onClick={handleSetNickname}
+                        sx={{ mt: 2, py: 1.5 }}
+                    >
+                        Join Chat
+                    </Button>
+                </Box>
+            </Container>
         );
     }
 
     return (
         <MessageProvider>
-            <Box sx={{ display: "flex", flexDirection: 'column', height: "100vh", bgcolor: "#1e1e1e" }}>
-                <AppBar position="static" sx={{ backgroundColor: "#333" }}>
+            <Box sx={{ display: "flex", flexDirection: 'column', height: "100vh", bgcolor: "#121212" }}>
+                <AppBar position="static" color="default" elevation={1}>
                     <Toolbar>
-                        <Typography variant="h6" sx={{ flexGrow: 1 }}>
-                            Welcome, <span style={{ fontWeight: 'bold' }}>{nickname}</span>!
+                        <img src={Logo} alt="Epitech Logo" style={{ height: 40, marginRight: 1 }} />
+                        <Typography variant="h6" sx={{ flexGrow: 1, color: 'white' }}>
+                            IRC Chat - Welcome, <span style={{ fontWeight: 'bold', color: '#bb86fc' }}>{nickname}</span>!
                         </Typography>
                     </Toolbar>
                 </AppBar>
-                <Box sx={{ display: "flex", flexGrow: 1 }}>
-                    <Box sx={{ width: 300, borderRight: "1px solid #444" }}>
+                <Grid container component="main" sx={{ flexGrow: 1 }}>
+                    <Grid item xs={12} md={3} sx={{ borderRight: "1px solid #333", display: 'flex', flexDirection: 'column' }}>
                         <ListConversation
                             onConvSelect={(id: string, type: "channel" | "private") => {
                                 setSelectedId(id);
                                 setSelectedType(type);
                             }}
                         />
-                    </Box>
-
-                    <Box sx={{ flexGrow: 1 }}>
+                    </Grid>
+                    <Grid item xs={12} md={9} sx={{ display: 'flex', flexDirection: 'column' }}>
                         {selectedId ? (
                             <DetailConversation
                                 conversationType={selectedType}
@@ -92,13 +113,13 @@ export default function Home() {
                                     color: "white"
                                 }}
                             >
-                                <Typography variant="h5">
+                                <Typography variant="h6" color="textSecondary">
                                     Select a channel or user to start chatting
                                 </Typography>
                             </Box>
                         )}
-                    </Box>
-                </Box>
+                    </Grid>
+                </Grid>
             </Box>
         </MessageProvider>
     );

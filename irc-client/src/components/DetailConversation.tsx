@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useContext } from "react";
+import React, { useEffect, useState, useRef, useContext } from "react";
 import {
     Box,
     List,
@@ -8,6 +8,7 @@ import {
     Chip,
     Alert,
     Snackbar,
+    Typography
 } from "@mui/material";
 import { socketService } from "../services/socketService";
 import { v4 as uuidv4 } from "uuid";
@@ -60,17 +61,17 @@ export default function DetailConversation({
                     const usersRes = await fetch(
                         `http://localhost:3000/users/channels/${conversationId}/users`
                     );
-                     if(usersRes.ok) {
-                       const usersData = await usersRes.json();
-                      setChannelUsers(usersData);
-                     }else {
-                         console.log(`[fetchInitialData] Error fetching users for channel ${conversationId}`)
-                         setChannelUsers(undefined);
-                     }
-                   
+                    if (usersRes.ok) {
+                        const usersData = await usersRes.json();
+                        setChannelUsers(usersData);
+                    } else {
+                        console.log(`[fetchInitialData] Error fetching users for channel ${conversationId}`);
+                        setChannelUsers(undefined);
+                    }
+
                 } catch (error) {
                     console.error("Error fetching channel data:", error);
-                     setChannelUsers(undefined);
+                    setChannelUsers(undefined);
                 }
             }
         };
@@ -93,8 +94,7 @@ export default function DetailConversation({
             }
         };
 
-        // Join the channel
-         if (conversationType === 'channel') {
+        if (conversationType === 'channel') {
             console.log('Joining channel:', conversationId);
             socketService.joinChannel(conversationId);
         }
@@ -177,7 +177,7 @@ export default function DetailConversation({
                     `Users in channel: ${channelUsers ? channelUsers.join(", ") : 'No users in channel'}`,
                     "System",
                     uuidv4(),
-                  conversationType
+                    conversationType
                 );
                 break;
             case "/msg":
@@ -189,7 +189,7 @@ export default function DetailConversation({
                         content,
                         currentUser,
                         uuidv4(),
-                       conversationType
+                        conversationType
                     );
                 } else {
                     setError("Usage: /msg USERNAME MESSAGE");
@@ -200,7 +200,7 @@ export default function DetailConversation({
         }
     };
 
- const handleSendMessage = () => {
+    const handleSendMessage = () => {
         if (!newMessage.trim()) return;
 
         if (newMessage.startsWith("/")) {
@@ -228,7 +228,7 @@ export default function DetailConversation({
         if (conversationType === "channel") {
             socketService.sendMessage(conversationId, newMessage, currentUser, localId, conversationType);
         } else if (conversationType === "private") {
-          socketService.sendPrivateMessage(conversationId, newMessage, currentUser, localId, conversationType);
+            socketService.sendPrivateMessage(conversationId, newMessage, currentUser, localId, conversationType);
         }
 
         setNewMessage("");
@@ -254,7 +254,7 @@ export default function DetailConversation({
                         sx={{
                             width: '100%',
                             mb: 1,
-                            backgroundColor: '#2a2a2a',
+                            backgroundColor: '#292929',
                             color: '#ffffff',
                             '& .MuiAlert-icon': { color: '#90caf9' }
                         }}
@@ -269,7 +269,7 @@ export default function DetailConversation({
                 ))}
             </Box>
 
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2, paddingLeft: 1, paddingRight: 1 }}>
                 <Box sx={{ display: "flex", gap: 1, alignItems: 'center' }}>
                     <Chip
                         label={conversationType === "channel" ? `#${channelName}` : `@${conversationId}`}
@@ -292,29 +292,25 @@ export default function DetailConversation({
                 </Box>
             </Box>
 
-            <List sx={{ flexGrow: 1, overflow: 'auto', bgcolor: '#222', borderRadius: 1, p: 1 }}>
+            <List sx={{ flexGrow: 1, overflow: 'auto', bgcolor: '#1e1e1e', borderRadius: 1, p: 1, paddingLeft: 1, paddingRight: 1 }}>
                 {currentMessages.map((message, i) => (
-                    <ListItem key={i} sx={{ alignItems: 'flex-start' }}>
+                    <ListItem key={i} sx={{ alignItems: 'flex-start', flexDirection: 'column', mb: 1, borderRadius: 2, padding: 1.5, bgcolor: '#292929' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', mb: 0.5 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#bb86fc' }}>{message.sender}</Typography>
+                            <Typography variant="caption" sx={{ color: '#666', ml: 1 }}>
+                                {new Date(message.timestamp).toLocaleTimeString()}
+                            </Typography>
+                        </Box>
                         <ListItemText
-                            primary={
-                                <>
-                                    <span style={{ fontWeight: 'bold', color: '#90caf9' }}>{message.sender}</span>
-                                    <span style={{ color: '#fff', marginLeft: 8 }}>{message.content}</span>
-                                </>
-                            }
-                            secondary={
-                                <span style={{ fontSize: '0.75rem', color: '#666' }}>
-                                    {new Date(message.timestamp).toLocaleTimeString()}
-                                </span>
-                            }
-                            sx={{ color: '#fff' }}
+                            primary={message.content}
+                            primaryTypographyProps={{ color: 'white' }}
                         />
                     </ListItem>
                 ))}
                 <div ref={messagesEndRef} />
             </List>
 
-            <Box sx={{ mt: 2 }}>
+            <Box sx={{ mt: 2, paddingLeft: 1, paddingRight: 1 }}>
                 <TextField
                     fullWidth
                     variant="outlined"
@@ -323,12 +319,14 @@ export default function DetailConversation({
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    InputProps={{ style: { color: 'white' } }}
                     sx={{
-                        bgcolor: '#333',
+                        bgcolor: '#292929',
                         '& .MuiOutlinedInput-root': {
                             color: 'white',
-                            '& fieldset': { borderColor: '#444' },
-                            '&:hover fieldset': { borderColor: '#666' }
+                            '& fieldset': { borderColor: '#333' },
+                            '&:hover fieldset': { borderColor: '#555' },
+                            '&.Mui-focused fieldset': { borderColor: '#bb86fc' }
                         }
                     }}
                 />
