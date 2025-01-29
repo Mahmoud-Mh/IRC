@@ -96,7 +96,7 @@ export class SocketService implements OnModuleInit {
           recipient: string;
           content: string;
           sender: string;
-          localId: string; // Temporary ID for optimistic updates
+          localId: string; 
            conversationType: "channel" | "private"
         }) => {
           const { recipient, content, sender, localId, conversationType } = payload;

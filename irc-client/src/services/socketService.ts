@@ -1,6 +1,5 @@
 import { io, Socket } from "socket.io-client";
 
-// Define TypeScript interfaces for better type safety
 interface Message {
     sender: string;
     content: string;
@@ -65,7 +64,7 @@ class SocketService {
     // Set the user's nickname
     setNickname(nickname: string) {
         if (this.socket) {
-            console.log(`Setting nickname: ${nickname}`); // Add logging
+            console.log(`Setting nickname: ${nickname}`); 
             this.socket.emit("setNickname", { nickname });
         }
     }
@@ -73,7 +72,7 @@ class SocketService {
     // Join a channel
     joinChannel(channelId: string) {
         if (this.socket) {
-            console.log(`Joining channel: ${channelId}`); // Add logging
+            console.log(`Joining channel: ${channelId}`); 
             this.socket.emit("joinChannel", { channelId });
         }
     }
@@ -87,7 +86,7 @@ class SocketService {
 
     // Send a message to a channel
     sendMessage(
-        channelId: string, // Expect ID
+        channelId: string, 
         content: string,
         sender: string,
         localId: string,
@@ -176,5 +175,4 @@ class SocketService {
     }
 }
 
-// Export an instance of SocketService
 export const socketService = new SocketService();

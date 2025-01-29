@@ -7,13 +7,13 @@ import {
     AppBar,
     Toolbar,
     Grid,
-    Container
+    Container,
 } from "@mui/material";
 import ListConversation from "../components/ListConversation";
 import DetailConversation from "../components/DetailConversation";
 import { socketService } from "../services/socketService";
 import { MessageProvider } from "../context/messageContext";
-import Logo from '../assets/epitech-logo.svg';
+import Logo from '../assets/epitech-logo.svg'; 
 
 export default function Home() {
     const [selectedType, setSelectedType] = useState<"channel" | "private">("channel");
@@ -76,10 +76,12 @@ export default function Home() {
         );
     }
 
+
     return (
         <MessageProvider>
             <Box sx={{ display: "flex", flexDirection: 'column', height: "100vh", bgcolor: "#121212" }}>
-                <AppBar position="static" color="default" elevation={1}>
+                {/* AppBar - make it sticky/fixed */}
+                <AppBar position="sticky"  /* Changed to 'sticky' or 'fixed', try 'sticky' first */ color="default" elevation={1} sx={{ zIndex: 1100 /* Ensure AppBar is above other content if needed */ }}>
                     <Toolbar>
                         <img src={Logo} alt="Epitech Logo" style={{ height: 40, marginRight: 1 }} />
                         <Typography variant="h6" sx={{ flexGrow: 1, color: 'white' }}>
@@ -87,8 +89,17 @@ export default function Home() {
                         </Typography>
                     </Toolbar>
                 </AppBar>
-                <Grid container component="main" sx={{ flexGrow: 1 }}>
-                    <Grid item xs={12} md={3} sx={{ borderRight: "1px solid #333", display: 'flex', flexDirection: 'column' }}>
+
+                {/* Content Area (Grid container) - Take up remaining height and make it scrollable if needed for very tall sidebars */}
+                <Grid container component="main" sx={{ flexGrow: 1, overflow: 'hidden' /* Important: prevent content overflow on container */ }}>
+                    {/* Sidebar (ListConversation) - Fixed width, scrollable content */}
+                    <Grid item xs={12} md={3} sx={{
+                        borderRight: "1px solid #333",
+                        display: 'flex',
+                        flexDirection: 'column',
+                        height: '100%', 
+                        overflowY: 'auto'  
+                    }}>
                         <ListConversation
                             onConvSelect={(id: string, type: "channel" | "private") => {
                                 setSelectedId(id);
@@ -96,7 +107,8 @@ export default function Home() {
                             }}
                         />
                     </Grid>
-                    <Grid item xs={12} md={9} sx={{ display: 'flex', flexDirection: 'column' }}>
+                    {/* Main Content (DetailConversation) - Takes remaining space, scrollable messages inside DetailConversation */}
+                    <Grid item xs={12} md={9} sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}> {/* Important: Main content area takes full container height */}
                         {selectedId ? (
                             <DetailConversation
                                 conversationType={selectedType}

@@ -292,7 +292,15 @@ export default function DetailConversation({
                 </Box>
             </Box>
 
-            <List sx={{ flexGrow: 1, overflow: 'auto', bgcolor: '#1e1e1e', borderRadius: 1, p: 1, paddingLeft: 1, paddingRight: 1 }}>
+            <List sx={{
+                flexGrow: 1,       /* Important: Allow message list to take up remaining vertical space */
+                overflowY: 'auto', /* Important: Make message list vertically scrollable */
+                bgcolor: '#1e1e1e',
+                borderRadius: 1,
+                p: 1,
+                paddingLeft: 1,
+                paddingRight: 1
+            }}>
                 {currentMessages.map((message, i) => (
                     <ListItem key={i} sx={{ alignItems: 'flex-start', flexDirection: 'column', mb: 1, borderRadius: 2, padding: 1.5, bgcolor: '#292929' }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', mb: 0.5 }}>

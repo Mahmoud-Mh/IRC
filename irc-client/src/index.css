@@ -1,56 +1,54 @@
-/* index.css */
 body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Roboto', sans-serif; /* More modern font */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #121212; /* Dark background */
-  color: #ffffff; /* Light text for dark theme */
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden; /* Prevent scrollbars on main viewport */
-}
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif; 
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #121212; 
+    color: #ffffff; 
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden; 
 
 #root {
-  height: 100vh;
-  width: 100vw;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden; /* Ensure content inside root scrolls */
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; 
 }
 
 a {
-  font-weight: 500;
-  color: #bb86fc; /* Primary color - a nice purple */
-  text-decoration: none; /* Remove underlines from links */
+    font-weight: 500;
+    color: #bb86fc; 
+    text-decoration: none;
 }
 
 a:hover {
-  color: #9c4eff; /* Lighter purple on hover */
+    color: #9c4eff; 
 }
 
 button {
-  border-radius: 4px; /* Slightly less rounded buttons */
-  border: none; /* Remove default button border */
-  padding: 0.75em 1.5em; /* Adjust button padding */
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #292929; /* Darker button background */
-  color: #ffffff; /* Light button text */
-  cursor: pointer;
-  transition: background-color 0.3s ease; /* Smooth background transition */
+    border-radius: 4px; 
+    border: none; 
+    padding: 0.75em 1.5em; 
+    font-size: 1em;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: #292929; 
+    color: #ffffff; 
+    cursor: pointer;
+    transition: background-color 0.3s ease; 
 }
 
 button:hover {
-  background-color: #3d3d3d; /* Slightly lighter on hover */
+    background-color: #3d3d3d; 
 }
 
 button:focus,
 button:focus-visible {
-  outline: 2px solid #bb86fc; /* Purple outline on focus */
-  outline-offset: 2px; /* Offset outline a bit */
+    outline: 2px solid #bb86fc; 
+    outline-offset: 2px; 
 }
 
 /* Override Material UI defaults for dark theme consistency - adjust as needed */
@@ -61,47 +59,47 @@ button:focus-visible {
 .MuiInputBase-root,
 .MuiAlert-root,
 .MuiSnackbarContent-root {
-  background-color: #1e1e1e !important; /* Darker background for components */
-  color: #ffffff !important; /* Light text for components */
-  border-color: #333 !important; /* Darker border color if needed */
+    background-color: #1e1e1e !important; 
+    color: #ffffff !important; 
+    border-color: #333 !important; 
 }
 
 .MuiOutlinedInput-notchedOutline {
-  border-color: #333 !important; /* Darker outline for text fields */
+    border-color: #333 !important; 
 }
 .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
-  border-color: #bb86fc !important; /* Purple outline on focus */
+    border-color: #bb86fc !important; 
 }
 
 .MuiChip-root {
-  background-color: #292929 !important; /* Darker chip background */
-  color: #ffffff !important;
+    background-color: #292929 !important; 
+    color: #ffffff !important;
 }
 .MuiChip-outlined {
-  border-color: #333 !important; /* Darker outlined chip border */
-  color: #888 !important; /* Lighter text for outlined chips */
+    border-color: #333 !important; 
+    color: #888 !important; 
 }
 .MuiChip-deleteIcon {
-  color: #888 !important; /* Lighter delete icon */
+    color: #888 !important; 
 }
 .MuiChip-deleteIcon:hover {
-  color: #ffffff !important; /* White delete icon on hover */
+    color: #ffffff !important; 
 }
 
-/* Custom scrollbar styling (optional, for webkit browsers) */
 ::-webkit-scrollbar {
-  width: 8px;
+    width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #292929;
+    background: #292929;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #555;
-  border-radius: 4px;
+    background-color: #555;
+    border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #777;
+    background-color: #777;
+}
 }
