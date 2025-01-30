@@ -13,7 +13,7 @@ import ListConversation from "../components/ListConversation";
 import DetailConversation from "../components/DetailConversation";
 import { socketService } from "../services/socketService";
 import { MessageProvider } from "../context/messageContext";
-import Logo from '../assets/epitech-logo.svg'; 
+import Logo from '../assets/epitech-logo.png'; 
 
 export default function Home() {
     const [selectedType, setSelectedType] = useState<"channel" | "private">("channel");

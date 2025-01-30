@@ -14,6 +14,13 @@ import { socketService } from "../services/socketService";
 import { v4 as uuidv4 } from "uuid";
 import { MessageContext } from "../context/messageContext";
 
+// Define the Channel interface here
+interface Channel {
+    _id: string; // Assuming MongoDB ObjectId is string
+    name: string;
+    // Add other properties if your backend Channel object has more, e.g., users?: string[];
+}
+
 interface DetailConversationProps {
     conversationType: "channel" | "private";
     conversationId: string;
@@ -163,12 +170,55 @@ export default function DetailConversation({
                     setError("Usage: /join CHANNEL_NAME");
                 }
                 break;
-            case "/leave":
+
+            case "/list":
+                const searchTerm = args.join(" ");
+                fetch(`http://localhost:3000/channels?search=${searchTerm}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const channels: Channel[] = data; // Type assertion here
+                        const message = channels.map((c: Channel) => `#${c.name}`).join(", ");
+                        socketService.sendMessage(conversationId, message, "System", uuidv4(), conversationType);
+                    });
+                break;
+            case "/create":
+                if (args[0]) {
+                    fetch("http://localhost:3000/channels", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ name: args[0] }),
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                          throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        // Optionally handle success feedback here if needed
+                      })
+                      .catch(error => {
+                        setError(`Failed to create channel: ${error.message}`);
+                      });
+                } else setError("Usage: /create CHANNEL_NAME");
+                break;
+            case "/delete":
+                if (args[0]) {
+                    fetch(`http://localhost:3000/channels/${args[0]}`, { method: "DELETE" })
+                    .then(response => {
+                        if (!response.ok) {
+                          throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        // Optionally handle success feedback here
+                      })
+                      .catch(error => {
+                        setError(`Failed to delete channel: ${error.message}`);
+                      });
+                } else setError("Usage: /delete CHANNEL_NAME");
+                break;
+            case "/quit":
                 if (args[0]) {
                     socketService.leaveChannel(args[0]);
                     setChannelName("");
                 } else {
-                    setError("Usage: /leave CHANNEL_NAME");
+                    setError("Usage: /quit CHANNEL_NAME");
                 }
                 break;
             case "/users":
@@ -293,8 +343,8 @@ export default function DetailConversation({
             </Box>
 
             <List sx={{
-                flexGrow: 1,       /* Important: Allow message list to take up remaining vertical space */
-                overflowY: 'auto', /* Important: Make message list vertically scrollable */
+                flexGrow: 1,
+                overflowY: 'auto',
                 bgcolor: '#1e1e1e',
                 borderRadius: 1,
                 p: 1,
