@@ -14,11 +14,9 @@ import { socketService } from "../services/socketService";
 import { v4 as uuidv4 } from "uuid";
 import { MessageContext } from "../context/messageContext";
 
-// Define the Channel interface here
 interface Channel {
-    _id: string; // Assuming MongoDB ObjectId is string
+    _id: string; 
     name: string;
-    // Add other properties if your backend Channel object has more, e.g., users?: string[];
 }
 
 interface DetailConversationProps {
@@ -176,7 +174,7 @@ export default function DetailConversation({
                 fetch(`http://localhost:3000/channels?search=${searchTerm}`)
                     .then(res => res.json())
                     .then(data => {
-                        const channels: Channel[] = data; // Type assertion here
+                        const channels: Channel[] = data; 
                         const message = channels.map((c: Channel) => `#${c.name}`).join(", ");
                         socketService.sendMessage(conversationId, message, "System", uuidv4(), conversationType);
                     });
@@ -192,7 +190,6 @@ export default function DetailConversation({
                         if (!response.ok) {
                           throw new Error(`HTTP error! status: ${response.status}`);
                         }
-                        // Optionally handle success feedback here if needed
                       })
                       .catch(error => {
                         setError(`Failed to create channel: ${error.message}`);
@@ -206,7 +203,6 @@ export default function DetailConversation({
                         if (!response.ok) {
                           throw new Error(`HTTP error! status: ${response.status}`);
                         }
-                        // Optionally handle success feedback here
                       })
                       .catch(error => {
                         setError(`Failed to delete channel: ${error.message}`);

@@ -13,17 +13,15 @@ export class MessageService {
     sender: string,
     channelId: string,
     content: string,
+    localId?: string, 
   ): Promise<Message> {
-    console.log(`[createMessage] Saving message:`, {
-      sender,
-      channelId,
-      content,
-    });
+    console.log('[createMessage] Saving message:', { sender, channelId, content, localId });
     return this.messageModel.create({
       sender,
       channel: channelId,
       content,
       timestamp: new Date(),
+      localId, 
     });
   }
 
@@ -32,11 +30,7 @@ export class MessageService {
     recipient: string,
     content: string,
   ): Promise<Message> {
-    console.log(`[createPrivateMessage] Saving private message:`, {
-      sender,
-      recipient,
-      content,
-    });
+    console.log('[createPrivateMessage] Saving private message:', { sender, recipient, content });
     return this.messageModel.create({
       sender,
       recipient,

@@ -85,6 +85,7 @@ class SocketService {
     }
 
     // Send a message to a channel
+    
     sendMessage(
         channelId: string, 
         content: string,
@@ -97,6 +98,7 @@ class SocketService {
             this.socket.emit("sendMessage", { channelId, content, sender, localId, conversationType });
         }
     }
+    
 
     // Send a private message to a user
     sendPrivateMessage(
