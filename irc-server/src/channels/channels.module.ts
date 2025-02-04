@@ -16,4 +16,4 @@ import { SocketModule } from '../socket/socket.module';
   providers: [ChannelService],
   exports: [ChannelService],
 })
-export class ChannelsModule {}
+export class ChannelsModule { }
