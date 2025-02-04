@@ -9,7 +9,7 @@ export class ChannelService {
 
   constructor(
     @InjectModel(Channel.name) private channelModel: Model<Channel>,
-  ) {}
+  ) { }
 
   async createChannel(name: string): Promise<Channel> {
     this.logger.log(`Creating channel: ${name}`);
