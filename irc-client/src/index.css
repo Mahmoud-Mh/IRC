@@ -9,26 +9,70 @@ body {
     height: 100vh;
     width: 100vw;
     overflow: hidden; 
-
-#root {
+  }
+  
+  #root {
     height: 100vh;
     width: 100vw;
     display: flex;
     flex-direction: column;
     overflow: hidden; 
-}
-
-a {
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  .logo {
+    height: 6em;
+    padding: 1.5em;
+    will-change: filter;
+    transition: filter 300ms;
+  }
+  
+  .logo:hover {
+    filter: drop-shadow(0 0 2em #646cffaa);
+  }
+  
+  .logo.react:hover {
+    filter: drop-shadow(0 0 2em #61dafbaa);
+  }
+  
+  @keyframes logo-spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  @media (prefers-reduced-motion: no-preference) {
+    a:nth-of-type(2) .logo {
+      animation: logo-spin infinite 20s linear;
+    }
+  }
+  
+  .card {
+    padding: 2em;
+  }
+  
+  .read-the-docs {
+    color: #888;
+  }
+  
+  a {
     font-weight: 500;
     color: #bb86fc; 
     text-decoration: none;
-}
-
-a:hover {
+  }
+  
+  a:hover {
     color: #9c4eff; 
-}
-
-button {
+  }
+  
+  button {
     border-radius: 4px; 
     border: none; 
     padding: 0.75em 1.5em; 
@@ -39,67 +83,67 @@ button {
     color: #ffffff; 
     cursor: pointer;
     transition: background-color 0.3s ease; 
-}
-
-button:hover {
+  }
+  
+  button:hover {
     background-color: #3d3d3d; 
-}
-
-button:focus,
-button:focus-visible {
+  }
+  
+  button:focus,
+  button:focus-visible {
     outline: 2px solid #bb86fc; 
     outline-offset: 2px; 
-}
-
-/* Override Material UI defaults for dark theme consistency - adjust as needed */
-.MuiPaper-root,
-.MuiList-root,
-.MuiListItem-root,
-.MuiTextField-root,
-.MuiInputBase-root,
-.MuiAlert-root,
-.MuiSnackbarContent-root {
+  }
+  
+  /* Override Material UI defaults for dark theme consistency */
+  .MuiPaper-root,
+  .MuiList-root,
+  .MuiListItem-root,
+  .MuiTextField-root,
+  .MuiInputBase-root,
+  .MuiAlert-root,
+  .MuiSnackbarContent-root {
     background-color: #1e1e1e !important; 
     color: #ffffff !important; 
     border-color: #333 !important; 
-}
-
-.MuiOutlinedInput-notchedOutline {
+  }
+  
+  .MuiOutlinedInput-notchedOutline {
     border-color: #333 !important; 
-}
-.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  }
+  .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
     border-color: #bb86fc !important; 
-}
-
-.MuiChip-root {
+  }
+  
+  .MuiChip-root {
     background-color: #292929 !important; 
     color: #ffffff !important;
-}
-.MuiChip-outlined {
+  }
+  .MuiChip-outlined {
     border-color: #333 !important; 
     color: #888 !important; 
-}
-.MuiChip-deleteIcon {
+  }
+  .MuiChip-deleteIcon {
     color: #888 !important; 
-}
-.MuiChip-deleteIcon:hover {
+  }
+  .MuiChip-deleteIcon:hover {
     color: #ffffff !important; 
-}
-
-::-webkit-scrollbar {
+  }
+  
+  ::-webkit-scrollbar {
     width: 8px;
-}
-
-::-webkit-scrollbar-track {
+  }
+  
+  ::-webkit-scrollbar-track {
     background: #292929;
-}
-
-::-webkit-scrollbar-thumb {
+  }
+  
+  ::-webkit-scrollbar-thumb {
     background-color: #555;
     border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
     background-color: #777;
-}
-}
+  }
+  
