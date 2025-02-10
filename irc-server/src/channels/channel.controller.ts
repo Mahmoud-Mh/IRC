@@ -18,7 +18,7 @@ export class ChannelController {
     private readonly channelService: ChannelService,
     private readonly userService: UserService,
     private readonly socketService: SocketService,
-  ) {}
+  ) { }
 
   @Post()
   async create(@Body('name') name: string) {
