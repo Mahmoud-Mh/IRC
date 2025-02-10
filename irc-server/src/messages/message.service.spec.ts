@@ -1,79 +1,127 @@
-// src/messages/message.service.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { MessageService } from './message.service';
 import { getModelToken } from '@nestjs/mongoose';
-import { Message } from './message.schema';
 import { Model } from 'mongoose';
-
-const mockMessage = {
-  sender: 'TestUser',
-  content: 'Hello world!',
-  timestamp: new Date(),
-  channel: 'channelId',
-  localId: 'local123',
-};
-
-function MockMessageModel(data: any) {
-  Object.assign(this, data);
-}
-MockMessageModel.prototype.save = jest.fn().mockResolvedValue(mockMessage);
-
-(MockMessageModel as any).create = jest.fn().mockResolvedValue(mockMessage);
-(MockMessageModel as any).find = jest.fn().mockReturnValue({
-  sort: jest.fn().mockReturnValue({
-    exec: jest.fn().mockResolvedValue([mockMessage]),
-  }),
-});
+import { Message } from './message.schema';
 
 describe('MessageService', () => {
-  let service: MessageService;
-  let model: Model<Message>;
+    let service: MessageService;
+    let messageModel: Model<Message>;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        MessageService,
-        {
-          provide: getModelToken(Message.name),
-          useValue: MockMessageModel,
-        },
-      ],
-    }).compile();
+    const mockMessageModel = {
+        create: jest.fn(),
+        find: jest.fn().mockReturnThis(),
+        sort: jest.fn().mockReturnThis(),
+        exec: jest.fn(),
+    };
 
-    service = module.get<MessageService>(MessageService);
-    model = module.get<Model<Message>>(getModelToken(Message.name));
-  });
+    beforeEach(async () => {
+        const module: TestingModule = await Test.createTestingModule({
+            providers: [
+                MessageService,
+                {
+                    provide: getModelToken(Message.name),
+                    useValue: mockMessageModel,
+                },
+            ],
+        }).compile();
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
-
-  it('should create a message with localId', async () => {
-    const message = await service.createMessage('TestUser', 'channelId', 'Hello world!', 'local123');
-    expect(message).toEqual(mockMessage);
-    expect(model.create).toHaveBeenCalledWith({
-      sender: 'TestUser',
-      channel: 'channelId',
-      content: 'Hello world!',
-      timestamp: expect.any(Date),
-      localId: 'local123',
+        service = module.get<MessageService>(MessageService);
+        messageModel = module.get<Model<Message>>(getModelToken(Message.name));
     });
-  });
 
-  it('should create a private message', async () => {
-    const privateMessage = await service.createPrivateMessage('UserA', 'UserB', 'Private hello');
-    expect(privateMessage).toEqual(mockMessage);
-    expect(model.create).toHaveBeenCalledWith({
-      sender: 'UserA',
-      recipient: 'UserB',
-      content: 'Private hello',
-      timestamp: expect.any(Date),
+    it('should be defined', () => {
+        expect(service).toBeDefined();
     });
-  });
 
-  it('should get messages by channel', async () => {
-    const messages = await service.getMessagesByChannel('channelId');
-    expect(messages).toEqual([mockMessage]);
-    expect(model.find).toHaveBeenCalledWith({ channel: 'channelId' });
-  });
+    describe('createMessage', () => {
+        it('should create and return a new message', async () => {
+            const messageData = {
+                sender: 'Alice',
+                channelId: '123',
+                content: 'Hello World',
+            };
+            const savedMessage = { ...messageData, id: '1', timestamp: new Date() };
+            mockMessageModel.create.mockResolvedValue(savedMessage);
+
+            const result = await service.createMessage(
+                messageData.sender,
+                messageData.channelId,
+                messageData.content,
+            );
+
+            expect(result).toEqual(savedMessage);
+            expect(mockMessageModel.create).toHaveBeenCalledWith({
+                sender: 'Alice',
+                channel: '123',
+                content: 'Hello World',
+                timestamp: expect.any(Date),
+            });
+        });
+    });
+
+    describe('createPrivateMessage', () => {
+        it('should create and return a new private message', async () => {
+            const messageData = {
+                sender: 'Alice',
+                recipient: 'Bob',
+                content: 'Hey Bob',
+            };
+            const savedMessage = { ...messageData, id: '2', timestamp: new Date() };
+            mockMessageModel.create.mockResolvedValue(savedMessage);
+
+            const result = await service.createPrivateMessage(
+                messageData.sender,
+                messageData.recipient,
+                messageData.content,
+            );
+
+            expect(result).toEqual(savedMessage);
+            expect(mockMessageModel.create).toHaveBeenCalledWith({
+                sender: 'Alice',
+                recipient: 'Bob',
+                content: 'Hey Bob',
+                timestamp: expect.any(Date),
+            });
+        });
+    });
+
+    describe('getMessagesByChannel', () => {
+        it('should return messages from a specific channel', async () => {
+            const messages = [
+                { id: '1', sender: 'Alice', channel: '123', content: 'Hello' },
+                { id: '2', sender: 'Bob', channel: '123', content: 'Hi' },
+            ];
+            mockMessageModel.exec.mockResolvedValue(messages);
+
+            const result = await service.getMessagesByChannel('123');
+
+            expect(result).toEqual(messages);
+            expect(mockMessageModel.find).toHaveBeenCalledWith({ channel: '123' });
+            expect(mockMessageModel.sort).toHaveBeenCalledWith({ timestamp: 1 });
+            expect(mockMessageModel.exec).toHaveBeenCalled();
+        });
+    });
+
+    describe('getPrivateMessages', () => {
+        it('should return private messages between two users', async () => {
+            const messages = [
+                { id: '3', sender: 'Alice', recipient: 'Bob', content: 'Hey' },
+                { id: '4', sender: 'Bob', recipient: 'Alice', content: 'Hello' },
+            ];
+            mockMessageModel.exec.mockResolvedValue(messages);
+
+            const result = await service.getPrivateMessages('Alice', 'Bob');
+
+            expect(result).toEqual(messages);
+            expect(mockMessageModel.find).toHaveBeenCalledWith({
+                $or: [
+                    { sender: 'Alice', recipient: 'Bob' },
+                    { sender: 'Bob', recipient: 'Alice' },
+                ],
+            });
+            expect(mockMessageModel.sort).toHaveBeenCalledWith({ timestamp: 1 });
+            expect(mockMessageModel.exec).toHaveBeenCalled();
+        });
+    });
 });
